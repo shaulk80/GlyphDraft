@@ -35,13 +35,14 @@ function Get-AppVersion {
 function Invoke-Gradle {
     # Returns $true on success; the caller decides what a failure means.
     param([string[]]$GradleArguments)
-    $wrapper = 'gradlew'
-    if (Test-IsWindowsHost) {
-        $wrapper = 'gradlew.bat'
-    }
-    $path = Join-Path $script:RepoRoot $wrapper
     Write-Host "gradle $($GradleArguments -join ' ')"
-    & $path @GradleArguments '--console=plain'
+    if (Test-IsWindowsHost) {
+        & (Join-Path $script:RepoRoot 'gradlew.bat') @GradleArguments '--console=plain'
+    }
+    else {
+        # Run through sh so a missing executable bit on gradlew (files made on Windows) does not matter.
+        & sh (Join-Path $script:RepoRoot 'gradlew') @GradleArguments '--console=plain'
+    }
     return ($LASTEXITCODE -eq 0)
 }
 
