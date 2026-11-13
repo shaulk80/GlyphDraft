@@ -57,7 +57,7 @@ Version lives only in `gradle.properties` (`appVersion`). Packages land in `dist
 
 - Paths: do not hardcode `\` or `/`; directory enumeration order is not guaranteed; file names are case-sensitive on Linux; a zip made on Windows loses the executable bit (Linux packages are tar.gz built on Linux).
 - Pin runner images (`ubuntu-24.04`, `windows-2022`), not `-latest`.
-- The Linux job installs: `xvfb libgl1 libx11-6 libxext6 libxrender1 libxtst6 libxi6 libfontconfig1 fonts-dejavu-core libfreetype6 binutils` (jpackage needs `objcopy` from binutils). Untested until the first CI run; correct this list by trial.
+- The Linux job installs: `xvfb libgl1 libx11-6 libxext6 libxrender1 libxtst6 libxi6 libfontconfig1 fonts-dejavu-core libfreetype6 binutils` (jpackage needs `objcopy` from binutils). Verified by a green run on 2026-11-13 (PR #1); add a library here when a new one is needed.
 - The JVM and Skiko (Compose's renderer) may write to the temp or cache folder (e.g. `hsperfdata`, extracted native library); check in M0 and list it here, since the app promises to write only to its data folder.
 - Android job needs KVM for the emulator; the workflow enables it with a udev rule.
 - The license plugin is applied per module: applied once at the root it fails with "resolution ... without an exclusive lock" under Gradle 9. New licenses go into `config/allowed-licenses.json` only after review.
