@@ -48,6 +48,16 @@ function Wait-ForLogFile {
     return $false
 }
 
+function Stop-ProcessAndWait {
+    # Windows keeps files locked until the process has really exited, so wait before deleting them.
+    param([System.Diagnostics.Process]$Process)
+    if ($null -eq $Process -or $Process.HasExited) {
+        return
+    }
+    Stop-Process -Id $Process.Id -Force
+    [void]$Process.WaitForExit(15000)
+}
+
 function Test-DesktopSmoke {
     param([string]$Package)
     $work = Join-Path ([System.IO.Path]::GetTempPath()) "glyphdraft-smoke-$([guid]::NewGuid().ToString('N'))"
@@ -72,14 +82,13 @@ function Test-DesktopSmoke {
         }
     }
     finally {
-        if ($null -ne $app -and -not $app.HasExited) {
-            Stop-Process -Id $app.Id -Force
-        }
-        if ($null -ne $display -and -not $display.HasExited) {
-            Stop-Process -Id $display.Id -Force
-        }
+        Stop-ProcessAndWait $app
+        Stop-ProcessAndWait $display
         Remove-Item Env:\GLYPHDRAFT_DATA_DIR -ErrorAction SilentlyContinue
-        Invoke-WithRetry { Remove-Item -LiteralPath $work -Recurse -Force } | Out-Null
+        $removed = Invoke-WithRetry { Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction Stop }
+        if (-not $removed) {
+            Write-Warning "Could not delete the temporary folder $work"
+        }
     }
     return $passed
 }

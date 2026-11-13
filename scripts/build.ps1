@@ -9,7 +9,7 @@
 .NOTES
   Compatible with Windows PowerShell 5.1 and PowerShell 7. Exits non-zero on any real failure.
   Coverage is reported elsewhere as a warning and never fails this script.
-  The Gradle task names below are confirmed in milestone M0; change them here only.
+  The Gradle task names below were confirmed locally on Windows in M0 (Linux and Android: by CI); change them here only.
 #>
 [CmdletBinding()]
 param(
@@ -25,9 +25,9 @@ $ErrorActionPreference = 'Continue'
 . (Join-Path $PSScriptRoot 'Smoke.ps1')
 
 $GradleTasks = @{
-    LicenseCheck = @('checkLicenses')
-    desktop      = @{ Test = @('jvmTest'); Build = @(':desktopApp:createDistributable') }
-    android      = @{ Test = @('testDebugUnitTest'); Build = @(':androidApp:assembleRelease') }
+    LicenseCheck = @('checkLicense')
+    desktop      = @{ Test = @('jvmTest', ':desktopApp:test'); Build = @(':desktopApp:createDistributable') }
+    android      = @{ Test = @('testAndroidHostTest'); Build = @(':androidApp:assembleRelease') }
 }
 
 function Stop-Build {
