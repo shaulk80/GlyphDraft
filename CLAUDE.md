@@ -59,10 +59,8 @@ Version lives only in `gradle.properties` (`appVersion`). Packages land in `dist
 - Pin runner images (`ubuntu-24.04`, `windows-2022`), not `-latest`.
 - The Linux job installs: `xvfb libgl1 libx11-6 libxext6 libxrender1 libxtst6 libxi6 libfontconfig1 fonts-dejavu-core libfreetype6 binutils` (jpackage needs `objcopy` from binutils). Verified by a green run on 2026-11-13 (PR #1); add a library here when a new one is needed.
 - The JVM and Skiko (Compose's renderer) may write to the temp or cache folder (e.g. `hsperfdata`, extracted native library); check in M0 and list it here, since the app promises to write only to its data folder.
-- Android job needs KVM for the emulator; the workflow enables it with a udev rule.
 - The license plugin is applied per module: applied once at the root it fails with "resolution ... without an exclusive lock" under Gradle 9. New licenses go into `config/allowed-licenses.json` only after review.
 - `local.properties` needs forward slashes in `sdk.dir`; backslashes are read as escapes and Gradle fails with "filename ... syntax is incorrect".
-- A killed Windows process keeps its files locked for a moment; wait for it to exit before deleting (see `Stop-ProcessAndWait`).
 - `gradlew` made on Windows has no executable bit in git; run `git update-index --chmod=+x gradlew` when adding it (the build script also calls it through `sh`).
 - Model files are large: never commit them; they download on first use into the data folder (design in M2).
 
@@ -70,12 +68,12 @@ Version lives only in `gradle.properties` (`appVersion`). Packages land in `dist
 
 - Build has no warnings; tests pass on every CI OS.
 - The changed feature was run (the app, or a UI/integration test), and the summary lists what was exercised.
-- PR description: what, why, test plan. `docs/status.md` updated in 2 to 5 lines.
+- PR description: what, why, test plan. `docs/status.md` updated in 2 to 5 lines; `docs/architecture.md` too if modules, boundaries or data locations changed.
 - No TODO without an issue.
 
 ## Where to look
 
 - `docs/status.md` - current state and next step. Start here.
 - `docs/plan.md` - milestones and their Definition of Done.
-- `docs/decisions/` - one short file per decision.
-- GitHub Issues - bugs and backlog.
+- `docs/architecture.md` - modules, engine boundary, data flow; update it when those change.
+- `docs/decisions/` - one short file per decision. GitHub Issues - bugs and backlog.
