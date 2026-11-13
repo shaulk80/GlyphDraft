@@ -7,25 +7,26 @@ Your global rules in `~/.claude` (language, code quality, tests, commits, review
 ## Layout
 
 ```
-core/        KMP library: domain types, Result wrapper, engine interfaces (OcrEngine, LanguageDetector, ...). No UI, no platform code.
-engine/      KMP library: on-device implementations of the interfaces (ONNX Runtime). Swappable; a cloud engine is a later sibling.
-ui/          KMP library: Compose Multiplatform screens and view models.
-androidApp/  Android application module (composition root).
-desktopApp/  Desktop (Windows, Linux) application module (composition root, jpackage).
+core/        KMP library (jvm + android): Outcome result wrapper; later the engine interfaces (OcrEngine, LanguageDetector, ...). No UI, no platform code.
+ui/          KMP library (jvm + android): Compose Multiplatform screens (App.kt).
+desktopApp/  JVM application (Windows, Linux): main, data folder, file log, jpackage app image.
+androidApp/  Android application: MainActivity, manifest, signing.
+engine/      (from M2) on-device implementations of the interfaces (ONNX Runtime); a cloud engine is a later sibling.
+config/      allowed-licenses.json (license allow-list for `checkLicense`)
 scripts/     build.ps1 (the one build script for CI and local) + Common/Checksums/Package/Smoke.ps1, smoke-android.sh
 docs/        status.md, plan.md, brief.md, decisions/
 ```
 
-The module split is final only after M0; update this block when it is.
-
 ## Commands
 
 ```
-.\gradlew check                      # build + all tests (wrapper is created in M0)
-.\gradlew :core:jvmTest --tests "*Name*"   # one test class
-.\gradlew :desktopApp:run            # run the desktop app
-.\scripts\build.ps1                  # CI-equivalent: licenses, build, test, package, checksums, smoke (host OS target)
-.\scripts\build.ps1 -Target android  # APK (any host with the Android SDK)
+.\gradlew jvmTest :desktopApp:test       # desktop-side tests (core, ui, desktopApp)
+.\gradlew testAndroidHostTest            # the same shared code tested as Android host tests
+.\gradlew :core:jvmTest --tests "*OutcomeTest*"   # one test class
+.\gradlew :desktopApp:run                # run the desktop app
+.\gradlew checkLicense                   # dependency license check (all modules)
+.\scripts\build.ps1                      # CI-equivalent: licenses, build, test, package, checksums, smoke (host OS)
+.\scripts\build.ps1 -Target android      # APK; then bash scripts/smoke-android.sh with an emulator running
 ```
 
 Version lives only in `gradle.properties` (`appVersion`). Packages land in `dist/`.
@@ -48,7 +49,8 @@ Version lives only in `gradle.properties` (`appVersion`). Packages land in `dist
 ## Environment
 
 - Windows 10 Pro. Default shell PowerShell 5.1; Git Bash available. `pwsh` (7) is NOT installed locally but is on CI runners: keep scripts compatible with both.
-- Installed when this was written: git 2.33, gh 2.103, node 26, python 3.12. NOT installed: JDK, Gradle, Android SDK, Android emulator. Linux and Android builds are verified by CI, not locally. WSL not checked.
+- Installed: git 2.33, gh 2.103, node 26, python 3.12, JDK 21 (Temurin, `JAVA_HOME` set), Android Studio Rabbit 2 with SDK platform 37 / build-tools 36 at `C:\Users\Admin\AppData\Local\Android\Sdk`, AVD `Medium_Phone_API_37.0`. No system-wide Gradle (use `gradlew`). `local.properties` (git-ignored) holds `sdk.dir` with forward slashes. Linux builds are verified by CI only. WSL not checked.
+- Start the emulator headless: `emulator -avd Medium_Phone_API_37.0 -no-window -no-audio`; `adb` is in `platform-tools` (not on PATH).
 - Do not install software; give the user the install steps.
 
 ## Gotchas
@@ -58,6 +60,10 @@ Version lives only in `gradle.properties` (`appVersion`). Packages land in `dist
 - The Linux job installs: `xvfb libgl1 libx11-6 libxext6 libxrender1 libxtst6 libxi6 libfontconfig1 fonts-dejavu-core libfreetype6 binutils` (jpackage needs `objcopy` from binutils). Untested until the first CI run; correct this list by trial.
 - The JVM and Skiko (Compose's renderer) may write to the temp or cache folder (e.g. `hsperfdata`, extracted native library); check in M0 and list it here, since the app promises to write only to its data folder.
 - Android job needs KVM for the emulator; the workflow enables it with a udev rule.
+- The license plugin is applied per module: applied once at the root it fails with "resolution ... without an exclusive lock" under Gradle 9. New licenses go into `config/allowed-licenses.json` only after review.
+- `local.properties` needs forward slashes in `sdk.dir`; backslashes are read as escapes and Gradle fails with "filename ... syntax is incorrect".
+- A killed Windows process keeps its files locked for a moment; wait for it to exit before deleting (see `Stop-ProcessAndWait`).
+- `gradlew` made on Windows has no executable bit in git; run `git update-index --chmod=+x gradlew` when adding it (the build script also calls it through `sh`).
 - Model files are large: never commit them; they download on first use into the data folder (design in M2).
 
 ## Definition of done
