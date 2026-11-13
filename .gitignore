@@ -1,0 +1,36 @@
+# Gradle / Kotlin
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+.kotlin/
+
+# Android
+local.properties
+*.apk
+*.aab
+*.keystore
+*.jks
+captures/
+.cxx/
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+.fleet/
+
+# Output of scripts/build.ps1
+dist/
+
+# Models and data (downloaded at run time, never committed)
+*.onnx
+*.gguf
+*.traineddata
+/data/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code local settings
+.claude/settings.local.json

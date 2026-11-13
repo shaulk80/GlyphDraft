@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew:*)",
+      "Bash(pwsh scripts/build.ps1:*)",
+      "Bash(./scripts/build.ps1:*)",
+      "PowerShell(.\\gradlew:*)",
+      "PowerShell(.\\gradlew.bat:*)",
+      "PowerShell(./gradlew:*)",
+      "PowerShell(.\\scripts\\build.ps1:*)",
+      "PowerShell(./scripts/build.ps1:*)"
+    ]
+  }
+}

@@ -1,0 +1,81 @@
+name: release
+
+# A v* tag builds all packages via ci.yml and creates a DRAFT release.
+# A manual run (workflow_dispatch) is a dry run: everything except creating the release.
+# GitHub can only dispatch this file once it is on the default branch.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    needs: ci
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Merge and verify checksums
+        working-directory: dist
+        run: |
+          cat SHA256SUMS-*.txt | sort -k2 > SHA256SUMS.txt
+          rm SHA256SUMS-*.txt
+          sha256sum -c SHA256SUMS.txt
+          ls -l
+      - name: Read version and check the tag
+        id: ver
+        run: |
+          VERSION=$(grep -E '^appVersion=' gradle.properties | cut -d= -f2 | tr -d '[:space:]')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [[ "$GITHUB_REF_TYPE" == "tag" && "$GITHUB_REF_NAME" != "v$VERSION" ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match appVersion $VERSION in gradle.properties"
+            exit 1
+          fi
+      - name: Extract release notes
+        run: |
+          awk -v v="${{ steps.ver.outputs.version }}" '
+            /^## / { if (found) exit; if (index($0, "## " v " ") == 1) { found = 1; next } }
+            found { print }
+          ' RELEASE_NOTES.md > notes.md
+          if [[ ! -s notes.md ]]; then
+            echo "::error::No '## ${{ steps.ver.outputs.version }} ' section in RELEASE_NOTES.md"
+            exit 1
+          fi
+      - name: Dry run - keep the files as an artifact
+        if: github.ref_type != 'tag'
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-preview
+          path: |
+            dist/*
+            notes.md
+          retention-days: 14
+      - name: Create the draft release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          PRE=""
+          if [[ "$VERSION" == 0.* ]]; then PRE="--prerelease"; fi
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --draft $PRE \
+            --title "GlyphDraft $VERSION" \
+            --notes-file notes.md
