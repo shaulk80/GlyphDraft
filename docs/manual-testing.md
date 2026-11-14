@@ -1,6 +1,6 @@
 # GlyphDraft: manual testing
 
-Steps for the owner to click through the app. Automated tests cover the logic (`.\gradlew jvmTest :desktopApp:test testAndroidHostTest`); this file covers what only a person can judge: the real file dialogs, the look and feel, the layout at different sizes.
+Steps for the owner to click through the app. Automated tests cover the logic and a scripted desktop click-through of the screens with fake pickers (`.\gradlew jvmTest :desktopApp:test testAndroidHostTest`); this file covers what only a person can judge: the real file dialogs, the look and feel, the layout at different sizes.
 
 Status of this file: written during M1, updated after task 6 (Android pickers). Update the "Known gaps" lists as tasks land.
 
