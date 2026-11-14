@@ -100,7 +100,7 @@ Retest of the first round's findings: the dialog should now be the current Windo
 
 ## Android
 
-Needs the emulator or a real device with USB debugging. Paths below are for this machine.
+Needs the emulator or a real device with USB debugging. Paths below are for this machine. Copy the leading `& ` of the commands too: without it PowerShell reads the quoted path as a string and fails with "Unexpected token '-avd'". Run the `$sdk = ...` line first in every new window.
 
 ```powershell
 $sdk = "C:\Users\Admin\AppData\Local\Android\Sdk"
@@ -138,3 +138,14 @@ $sdk = "C:\Users\Admin\AppData\Local\Android\Sdk"
 - Desktop log: `<data folder>\logs\glyphdraft.log`.
 - Android log: `& "$sdk\platform-tools\adb.exe" logcat -s AndroidRuntime` right after a crash.
 - Send me the step number, what you saw and what you expected, or file a GitHub issue.
+
+## Results log
+
+Newest first. One entry per round: what was run, by whom, what failed, what is still open.
+
+### M1, 2026-11-14 (owner)
+
+- **Desktop, `gradlew run` on Windows:** first round 22 of 27 steps passed outright; findings were the old-style file dialog (no pasted path, last folder not remembered), no vertical scrollbar, a wrong `big.png` size in this guide (exactly 50 MB is accepted), and the "dev" version line (expected). Dialog and scrollbar were fixed (decision 0004); the retest of every step passed.
+- **Packaged Windows app (zip from `scripts\build.ps1`):** Choose image and Save as dialogs worked. Passed.
+- **Android emulator (API 37):** all checks in the Android section passed, including system pickers, Save as, system Back key (also cancelling a running recognition), rotation, status bar, edge insets and the small, large and tablet sizes. No changes requested.
+- **Not done, deferred:** Linux (a WSL setup exists; test at a later stage; CI covers build, packaging and the smoke test); a real Android device.
