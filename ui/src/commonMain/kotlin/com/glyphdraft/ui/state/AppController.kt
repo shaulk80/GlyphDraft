@@ -98,6 +98,15 @@ class AppController(
         }
     }
 
+    /** The system Back key: cancels a running recognition, otherwise goes back one screen (see [AppState.handlesBack]). */
+    fun handleBack() {
+        if (state.value.activity == Activity.Recognizing) {
+            cancelRecognition()
+        } else {
+            back()
+        }
+    }
+
     fun dismissNotice() {
         mutableState.update { it.copy(notice = null) }
     }

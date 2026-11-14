@@ -37,4 +37,7 @@ data class AppState(
     val busy: Boolean get() = activity != Activity.Idle
 
     val canRecognize: Boolean get() = image != null && !busy
+
+    /** True when the system Back key has something to do: cancel a running recognition or go back a screen. */
+    val handlesBack: Boolean get() = activity == Activity.Recognizing || backStack.size > 1
 }

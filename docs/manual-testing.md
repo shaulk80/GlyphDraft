@@ -2,7 +2,7 @@
 
 Steps for the owner to click through the app. Automated tests cover the logic (`.\gradlew jvmTest :desktopApp:test testAndroidHostTest`); this file covers what only a person can judge: the real file dialogs, the look and feel, the layout at different sizes.
 
-Status of this file: written during M1 after task 5 (desktop file dialogs). Android still uses placeholder picker and saver until task 6; the notes in each section say what to expect. Update the "Known gaps" lists as tasks land.
+Status of this file: written during M1, updated after task 6 (Android pickers). Update the "Known gaps" lists as tasks land.
 
 While reviewing, write down every change you want (wording, layout, flow, missing screen). M1 is done when each one is done or filed as a GitHub issue.
 
@@ -118,20 +118,20 @@ $sdk = "C:\Users\Admin\AppData\Local\Android\Sdk"
 |---|---|
 | Start the app | Status bar clock and icons are dark on the light background (this was a bug in v0.0.1) |
 | Switch Settings → Theme → Dark | Status bar icons turn light |
-| Tap "Choose image…" | **Placeholder for now:** it picks a fake `sample.png` without opening any picker (real system picker arrives in task 6) |
+| Tap "Choose image…" | The system photo picker opens (on some devices the document picker). Choose a photo and confirm; the card shows its name and size. The name may be the provider's own (for example `35.png`), not the original file name. Cancel (Back key or X) changes nothing and shows no message |
 | Tap "Recognize text" | Result screen with the language line and sample text |
 | Tap "Copy" | Banner "Copied to the clipboard."; Android shows its clipboard preview |
-| Tap "Save as…" | **Placeholder for now:** red banner "Saving is not wired yet." |
-| Press the system Back button on Result or Settings | Currently exits the app; the on-screen "← Back" is the way back. Tell me if the system Back should also navigate (likely a change request) |
-| Rotate the device | **Known gap until task 6:** state is lost and the app returns to the empty Home screen |
+| Tap "Save as…" | The system "save" screen opens with the suggested name `<image name>.txt`. Save: banner "Saved." and the file contains the text (UTF-8). Cancel with the Back key: no banner |
+| Press the system Back key on Result or Settings | Goes back one screen (Home keeps the chosen image). On Home it leaves the app. While recognition is running it cancels the recognition instead |
+| Rotate the device on Home and on Result (also while the picker or the save screen is open) | Nothing is lost: same screen, image, language and text. A result chosen in the picker after rotating still arrives |
 | Check the top and bottom edges | Content is not hidden under the status bar or the gesture bar |
 | Try a small and a large phone, and a tablet if you have one | Layout stays readable; the tablet shows the two-column Home |
 
 ### Known gaps (Android)
 
-- Picker and saver are placeholders until task 6.
-- State does not survive rotation until task 6.
 - Not tried on a real device yet; the emulator is API 37.
+- State is lost when Android kills the app process in the background (only rotation is handled).
+- Settings reset on restart, as on desktop.
 
 ## When something looks wrong
 

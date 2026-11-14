@@ -203,6 +203,28 @@ class AppControllerTest {
         }
 
     @Test
+    fun backKeyCancelsRecognitionThenGoesBackAndIsNotHandledOnHome() =
+        runTest {
+            val controller = controllerWithImage()
+            assertEquals(false, controller.state.value.handlesBack)
+
+            engine.gate = CompletableDeferred()
+            controller.recognize()
+            runCurrent()
+            assertEquals(true, controller.state.value.handlesBack)
+            controller.handleBack()
+            advanceUntilIdle()
+            assertEquals(Activity.Idle, controller.state.value.activity)
+            assertEquals(Screen.Home, controller.state.value.screen)
+
+            controller.openSettings()
+            assertEquals(true, controller.state.value.handlesBack)
+            controller.handleBack()
+            assertEquals(Screen.Home, controller.state.value.screen)
+            assertEquals(false, controller.state.value.handlesBack)
+        }
+
+    @Test
     fun defaultLanguagePreselectsLanguageAndThemeIsStored() =
         runTest {
             val controller = controller()
