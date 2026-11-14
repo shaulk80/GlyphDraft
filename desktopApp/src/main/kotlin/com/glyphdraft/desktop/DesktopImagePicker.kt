@@ -35,8 +35,8 @@ class DesktopImagePicker(
     private fun read(path: Path): Outcome<ImageInput?> {
         try {
             val size = Files.size(path)
-            if (size > MAX_IMAGE_BYTES) {
-                return Outcome.Failure("The file ${path.fileName} is too large (${size / BYTES_PER_MB} MB; the limit is ${MAX_IMAGE_BYTES / BYTES_PER_MB} MB).")
+            if (size > ImageInput.MAX_BYTES) {
+                return Outcome.Failure(ImageInput.tooLargeMessage(path.fileName.toString(), size))
             }
 
             return Outcome.Success(ImageInput(path.fileName.toString(), Files.readAllBytes(path)))
@@ -48,7 +48,5 @@ class DesktopImagePicker(
 
     companion object {
         val IMAGE_EXTENSIONS = setOf("png", "jpg", "jpeg", "bmp", "gif", "webp", "tif", "tiff")
-        const val BYTES_PER_MB = 1024L * 1024L
-        const val MAX_IMAGE_BYTES = 50L * BYTES_PER_MB
     }
 }
