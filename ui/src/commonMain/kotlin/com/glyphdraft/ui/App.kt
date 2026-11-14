@@ -1,6 +1,8 @@
 package com.glyphdraft.ui
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -15,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.glyphdraft.ui.state.AppController
 import com.glyphdraft.ui.state.AppState
@@ -57,14 +60,20 @@ private fun AppScaffold(state: AppState, controller: AppController, version: Str
             )
         },
     ) { padding ->
-        Column(Modifier.padding(padding).verticalScroll(rememberScrollState())) {
-            state.notice?.let { notice ->
-                CenteredColumn { NoticeBanner(notice, onDismiss = controller::dismissNotice) }
+        val scrollState = rememberScrollState()
+        Box(Modifier.padding(padding)) {
+            Column(Modifier.fillMaxSize().verticalScroll(scrollState)) {
+                state.notice?.let { notice ->
+                    CenteredColumn { NoticeBanner(notice, onDismiss = controller::dismissNotice) }
+                }
+                when (state.screen) {
+                    Screen.Home -> HomeScreen(state, controller)
+                    Screen.Result -> ResultScreen(state, controller)
+                    Screen.Settings -> SettingsScreen(state, controller, version)
+                }
             }
-            when (state.screen) {
-                Screen.Home -> HomeScreen(state, controller)
-                Screen.Result -> ResultScreen(state, controller)
-                Screen.Settings -> SettingsScreen(state, controller, version)
+            if (scrollState.canScrollForward || scrollState.canScrollBackward) {
+                VerticalScrollIndicator(scrollState, Modifier.align(Alignment.CenterEnd).fillMaxHeight())
             }
         }
     }
