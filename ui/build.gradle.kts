@@ -12,6 +12,7 @@ kotlin {
         namespace = "com.glyphdraft.ui"
         compileSdk = 37
         minSdk = 26
+        withHostTest {}
     }
 
     sourceSets {
@@ -21,6 +22,14 @@ kotlin {
             implementation(libs.compose.foundation)
             implementation(libs.compose.ui)
             implementation(libs.compose.material3)
+        }
+        jvmTest.dependencies {
+            implementation(libs.compose.ui.test)
+            implementation(compose.desktop.currentOs)
+        }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+            implementation(libs.coroutines.test)
         }
     }
 }

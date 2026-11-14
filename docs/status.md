@@ -1,10 +1,10 @@
 # GlyphDraft: status
 
-Updated: 2026-11-13. Keep this file under 40 lines. History belongs in git and pull requests, not here.
+Updated: 2026-11-14. Keep this file under 40 lines. History belongs in git and pull requests, not here.
 
 ## Now
 
-M0 (walking skeleton) is done: `v0.0.1` pre-release is published. Next: M1, the clickable skeleton (docs/plan.md). Start a new branch `m1`.
+M1 (clickable skeleton) is built and manually tested on branch `m1` (PR open, waiting for CI): Home, Result and Settings screens, stub engine, FileKit file dialogs on desktop, system pickers on Android. The owner clicked through desktop (incl. the packaged app) and Android and requested no further changes (results: docs/manual-testing.md). Next: merge the PR when green, then M2 (OCR, v0.1.0).
 
 ## Releases
 
@@ -16,7 +16,6 @@ M0 (walking skeleton) is done: `v0.0.1` pre-release is published. Next: M1, the 
 
 - Trademark search (USPTO, TMview, WIPO) for "GlyphDraft" not done; do it before any public launch.
 - Android release keystore and CI secrets: implement before v0.1.0 (decisions/0002, confirmed).
-- Android status bar text is white on the light background (edge-to-edge); fix in M1.
 - `stacks/kotlin-multiplatform.md` for the newproject skill not written yet (owner's call).
 
 ## How things are set up
@@ -24,7 +23,7 @@ M0 (walking skeleton) is done: `v0.0.1` pre-release is published. Next: M1, the 
 - CI: build-windows (windows-2022), build-linux and build-android (ubuntu-24.04); required checks on `main`.
 - Branch protection: rulesets `protect-main` and `protect-release-tags` active since 2026-11-13. Every change goes through a PR.
 - Verified: build.ps1 on all three OSes in CI; release.yml dry run and the real tag run; the published assets download anonymously, match `SHA256SUMS.txt`, Linux launcher keeps its executable bit; the published Windows zip starts and writes its log; the APK launches on an emulator (CI API 34, local API 37).
-- Not verified: the published Linux tar.gz and APK were not started by hand (CI smoke-tested the same build); no real Android device; the desktop window was not looked at after the final release.
+- Not verified (M1): Linux file dialogs and the Linux package (owner has WSL; deferred, CI covers build and smoke test only); Android on a real device (emulator API 37 only). Settings are in memory and reset on restart until M2.
 
 ## Decisions worth remembering
 
