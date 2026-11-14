@@ -14,14 +14,19 @@ private const val DEV_VERSION = "dev"
 fun main() {
     val version = System.getProperty("jpackage.app-version") ?: DEV_VERSION
     val logFile = DataDirectory.resolve().resolve("logs").resolve("glyphdraft.log")
-    val logged = FileLog(logFile).info("GlyphDraft $version starting")
+    val log = FileLog(logFile)
+    val logged = log.info("GlyphDraft $version starting")
     if (logged is Outcome.Failure) {
         System.err.println(logged.message)
     }
 
     application {
         val scope = rememberCoroutineScope()
-        val controller = remember { AppController(scope, StubOcrEngine(), PlaceholderImagePicker(), PlaceholderTextSaver()) }
+        val controller =
+            remember {
+                val chooser = AwtFileChooser()
+                AppController(scope, StubOcrEngine(), DesktopImagePicker(chooser, log), DesktopTextSaver(chooser, log))
+            }
         Window(onCloseRequest = ::exitApplication, title = "GlyphDraft") {
             App(controller, version)
         }
