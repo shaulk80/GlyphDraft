@@ -1,9 +1,13 @@
 package com.glyphdraft.desktop
 
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import com.glyphdraft.core.Outcome
+import com.glyphdraft.core.stub.StubOcrEngine
 import com.glyphdraft.ui.App
+import com.glyphdraft.ui.state.AppController
 
 private const val DEV_VERSION = "dev"
 
@@ -16,8 +20,10 @@ fun main() {
     }
 
     application {
+        val scope = rememberCoroutineScope()
+        val controller = remember { AppController(scope, StubOcrEngine(), PlaceholderImagePicker(), PlaceholderTextSaver()) }
         Window(onCloseRequest = ::exitApplication, title = "GlyphDraft") {
-            App(version)
+            App(controller, version)
         }
     }
 }
