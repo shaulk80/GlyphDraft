@@ -4,7 +4,7 @@ Updated: 2026-11-14. Keep this file under 40 lines. History belongs in git and p
 
 ## Now
 
-M1 (clickable skeleton) is built and manually tested on branch `m1` (PR open, waiting for CI): Home, Result and Settings screens, stub engine, FileKit file dialogs on desktop, system pickers on Android. The owner clicked through desktop (incl. the packaged app) and Android and requested no further changes (results: docs/manual-testing.md). Next: merge the PR when green, then M2 (OCR, v0.1.0).
+M1 (clickable skeleton) is done and merged (PR #4, 2026-11-14): Home, Result and Settings screens, stub engine, FileKit file dialogs on desktop, system pickers on Android. The owner clicked through desktop (incl. the packaged app) and Android and requested no further changes (results: docs/manual-testing.md). Next: M2 (OCR with language detection, v0.1.0), see docs/plan.md.
 
 ## Releases
 
