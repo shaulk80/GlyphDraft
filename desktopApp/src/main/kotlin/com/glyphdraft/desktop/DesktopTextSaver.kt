@@ -20,13 +20,19 @@ class DesktopTextSaver(
 ) : TextSaver {
     override suspend fun save(suggestedName: String, text: String): Outcome<Boolean> =
         withContext(dispatcher) {
-            val path = chooser.chooseToSave("Save text", suggestedName)
-            if (path == null) {
-                Outcome.Success(false)
-            } else {
-                write(path, text)
+            when (val chosen = chooser.chooseToSave("Save text", suggestedName)) {
+                is Outcome.Failure -> chosen
+                is Outcome.Success -> writeIfChosen(chosen.value, text)
             }
         }
+
+    private fun writeIfChosen(path: Path?, text: String): Outcome<Boolean> {
+        if (path == null) {
+            return Outcome.Success(false)
+        }
+
+        return write(path, text)
+    }
 
     private fun write(path: Path, text: String): Outcome<Boolean> {
         try {

@@ -18,13 +18,19 @@ class DesktopImagePicker(
 ) : ImagePicker {
     override suspend fun pick(): Outcome<ImageInput?> =
         withContext(dispatcher) {
-            val path = chooser.chooseToOpen("Choose an image", IMAGE_EXTENSIONS)
-            if (path == null) {
-                Outcome.Success(null)
-            } else {
-                read(path)
+            when (val chosen = chooser.chooseToOpen("Choose an image", IMAGE_EXTENSIONS)) {
+                is Outcome.Failure -> chosen
+                is Outcome.Success -> readIfChosen(chosen.value)
             }
         }
+
+    private fun readIfChosen(path: Path?): Outcome<ImageInput?> {
+        if (path == null) {
+            return Outcome.Success(null)
+        }
+
+        return read(path)
+    }
 
     private fun read(path: Path): Outcome<ImageInput?> {
         try {

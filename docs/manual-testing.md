@@ -51,7 +51,7 @@ Start: `.\gradlew :desktopApp:run` (first start compiles, about a minute).
 | Pick `empty.png` from the test-files folder, then "Recognize text" | Red banner "The image 'empty.png' is empty."; you stay on Home; "Dismiss" removes the banner |
 | Pick `big.png` (60 MB; the limit is 50 MB, a file of exactly 50 MB is still accepted), if you made it | Red banner: file too large, with the limit (the file is not read) |
 
-Note: on Windows the dialog shows all files, not only images (the extension filter is ignored by the Windows dialog).
+Retest of the first round's findings: the dialog should now be the current Windows one (address bar, paste a path, favourites), parented to the app window, with only image files shown (or an "image files" filter). The last folder is remembered: the second dialog opens where the first one ended, and after a restart too (it is stored in `last-folder.txt` in the data folder). Check all three.
 
 ### 3. Language and recognize
 
@@ -90,7 +90,7 @@ Note: on Windows the dialog shows all files, not only images (the extension filt
 |---|---|
 | Drag the window narrower than about 600 px | The three steps stack in one column |
 | Maximise the window | Content stays centred, at most 720 px wide; nothing stretches across the screen |
-| Make it very small | Content scrolls; nothing is cut off with no way to reach it |
+| Make it very small | A vertical scrollbar appears on the right (drag it, or use the mouse wheel); nothing is cut off with no way to reach it. On Android there is no scrollbar, only touch scrolling |
 
 ### Known gaps (desktop)
 

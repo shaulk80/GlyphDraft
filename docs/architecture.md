@@ -50,6 +50,7 @@ Shared by default. Platform code is limited to what the OS dictates: picking a f
 ## Data, logs and models
 
 - **Desktop (in code):** data folder is `GLYPHDRAFT_DATA_DIR` if set (tests and smoke tests use it), else `%APPDATA%\GlyphDraft` on Windows, `$XDG_DATA_HOME/glyphdraft` or `~/.local/share/glyphdraft` on Linux. Log: `<data>/logs/glyphdraft.log`.
+- **Last folder (desktop file dialogs):** `<data>/last-folder.txt` holds one line, the folder of the last chosen file; the dialogs start there. Not read when the folder no longer exists.
 - **Android:** only logcat so far; the app-private data folder and a log file are decided with the first feature that needs them.
 - **Models (planned, M2):** downloaded on first use into the data folder, with progress and a SHA-256 check; never committed or bundled in the repo. Offline after the first download.
 
