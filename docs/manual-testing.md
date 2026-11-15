@@ -139,13 +139,6 @@ $sdk = "C:\Users\Admin\AppData\Local\Android\Sdk"
 - Android log: `& "$sdk\platform-tools\adb.exe" logcat -s AndroidRuntime` right after a crash.
 - Send me the step number, what you saw and what you expected, or file a GitHub issue.
 
-## Results log
+## Results
 
-Newest first. One entry per round: what was run, by whom, what failed, what is still open.
-
-### M1, 2026-11-14 (owner)
-
-- **Desktop, `gradlew run` on Windows:** first round 22 of 27 steps passed outright; findings were the old-style file dialog (no pasted path, last folder not remembered), no vertical scrollbar, a wrong `big.png` size in this guide (exactly 50 MB is accepted), and the "dev" version line (expected). Dialog and scrollbar were fixed (decision 0004); the retest of every step passed.
-- **Packaged Windows app (zip from `scripts\build.ps1`):** Choose image and Save as dialogs worked. Passed.
-- **Android emulator (API 37):** all checks in the Android section passed, including system pickers, Save as, system Back key (also cancelling a running recognition), rotation, status bar, edge insets and the small, large and tablet sizes. No changes requested.
-- **Not done, deferred:** Linux (a WSL setup exists; test at a later stage; CI covers build, packaging and the smoke test); a real Android device.
+Results of each round are recorded per milestone in `docs/manual/` (`m1.md`, then `m2.md` and so on), in the session the owner reports them. A new milestone gets its own file when it starts, with steps taken from the exact labels in the UI (read from the source) and a table: step, expected, result, date.
