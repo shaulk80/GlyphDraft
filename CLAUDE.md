@@ -36,8 +36,11 @@ Version lives only in `gradle.properties` (`appVersion`). Packages land in `dist
 - Language: Kotlin (K2), Gradle Kotlin DSL, version catalog in `gradle/libs.versions.toml`. Dependencies direction: `ui`, `engine` -> `core`; apps -> all. `core` never references a UI or platform API.
 - Engines sit behind interfaces in `core`; the app picks an engine in the composition root from settings. Never call an engine class from the UI directly.
 - Errors are `Result` values (`core`), not exceptions. Coroutines for all I/O; no blocking calls on the main thread.
+- Commit messages and PR descriptions: no `Co-Authored-By` and no "Generated with Claude Code" line (owner rule; overrides defaults). `.claude/settings.json` sets `attribution` to empty so Claude Code does not add them.
 - Commits: Conventional Commits, `type(scope): summary`, one logical change per commit. Commit per task, not per milestone.
-- Tests run on every target OS in CI. Coverage is a warning, never a gate.
+- Tests run on every target OS in CI. Coverage is a warning, never a gate. A flaky check gets one retry in its script (logged) and an issue; fix it before the next milestone.
+- One task per pull request, about 800 changed lines or fewer (tests and generated files not counted).
+- A problem that passes about 60 tool calls with no result: stop, write what was learned to `docs/spikes/<name>.md`, and recommend that the user start a fresh session.
 - Do not write files outside the data folder. Its location: `GLYPHDRAFT_DATA_DIR` if set (smoke tests use this), else the per-OS app data folder. Logs go to `<data>/logs/`.
 
 ## Git and CI
@@ -51,10 +54,13 @@ Version lives only in `gradle.properties` (`appVersion`). Packages land in `dist
 - Windows 10 Pro. Default shell PowerShell 5.1; Git Bash available. `pwsh` (7) is NOT installed locally but is on CI runners: keep scripts compatible with both.
 - Installed: git 2.33, gh 2.103, node 26, python 3.12, JDK 21 (Temurin, `JAVA_HOME` set), Android Studio Rabbit 2 with SDK platform 37 / build-tools 36 at `C:\Users\Admin\AppData\Local\Android\Sdk`, AVD `Medium_Phone_API_37.0`. No system-wide Gradle (use `gradlew`). `local.properties` (git-ignored) holds `sdk.dir` with forward slashes. Linux builds are verified by CI only. WSL not checked.
 - Start the emulator headless: `emulator -avd Medium_Phone_API_37.0 -no-window -no-audio`; `adb` is in `platform-tools` (not on PATH).
+- After an install, refresh PATH in the session with `. .\scripts\env.ps1`.
 - Do not install software; give the user the install steps.
 
 ## Gotchas
 
+- Edit files with the Edit and Write tools, never with shell heredocs (quoting breaks on Windows). Run Gradle and PowerShell scripts in PowerShell, not Git Bash.
+- Never delete with a glob after `cd` (the safety check blocks it); name a new empty folder instead.
 - Paths: do not hardcode `\` or `/`; directory enumeration order is not guaranteed; file names are case-sensitive on Linux; a zip made on Windows loses the executable bit (Linux packages are tar.gz built on Linux).
 - Pin runner images (`ubuntu-24.04`, `windows-2022`), not `-latest`.
 - The Linux job installs: `xvfb libgl1 libx11-6 libxext6 libxrender1 libxtst6 libxi6 libfontconfig1 fonts-dejavu-core libfreetype6 binutils` (jpackage needs `objcopy` from binutils). Verified by a green run on 2026-11-13 (PR #1); add a library here when a new one is needed.
@@ -68,12 +74,14 @@ Version lives only in `gradle.properties` (`appVersion`). Packages land in `dist
 
 - Build has no warnings; tests pass on every CI OS.
 - The changed feature was run (the app, or a UI/integration test), and the summary lists what was exercised.
-- PR description: what, why, test plan. `docs/status.md` updated in 2 to 5 lines; `docs/architecture.md` too if modules, boundaries or data locations changed.
+- PR description: what, why, test plan. `docs/status.md` updated in 2 to 5 lines, in the same pull request (no record-only pull requests; keep it under 3 KB); `docs/architecture.md` too if modules, boundaries or data locations changed.
+- Hand-test results the owner reports are written into `docs/manual/<milestone>.md` in the same session.
 - No TODO without an issue.
 
 ## Where to look
 
 - `docs/status.md` - current state and next step. Start here.
-- `docs/plan.md` - milestones and their Definition of Done.
+- `docs/plan.md` - the current and next milestone in detail, closed ones in one line each (under 8 KB). Full old plans: `docs/history/`.
+- `docs/manual-testing.md` - how to run the hand tests and what to click; `docs/manual/` - results and checklists per milestone (step, expected, result, date).
 - `docs/architecture.md` - modules, engine boundary, data flow; update it when those change.
 - `docs/decisions/` - one short file per decision. GitHub Issues - bugs and backlog.
