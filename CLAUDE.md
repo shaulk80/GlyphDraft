@@ -11,7 +11,7 @@ core/        KMP library (jvm + android): Outcome result wrapper; later the engi
 ui/          KMP library (jvm + android): Compose Multiplatform screens (App.kt).
 desktopApp/  JVM application (Windows, Linux): main, data folder, file log, jpackage app image.
 androidApp/  Android application: MainActivity, manifest, signing.
-engine/      (from M2) on-device implementations of the interfaces (ONNX Runtime); a cloud engine is a later sibling.
+engine/      KMP library (jvm + android): on-device implementations of the interfaces (ONNX Runtime; so far only the self-test and the desktop native-library loader); a cloud engine is a later sibling.
 config/      allowed-licenses.json (license allow-list for `checkLicense`)
 scripts/     build.ps1 (the one build script for CI and local) + Common/Checksums/Package/Smoke.ps1, smoke-android.sh
 docs/        status.md, plan.md, brief.md, decisions/
@@ -41,7 +41,7 @@ Version lives only in `gradle.properties` (`appVersion`). Packages land in `dist
 - Tests run on every target OS in CI. Coverage is a warning, never a gate. A flaky check gets one retry in its script (logged) and an issue; fix it before the next milestone.
 - One task per pull request, about 800 changed lines or fewer (tests and generated files not counted).
 - A problem that passes about 60 tool calls with no result: stop, write what was learned to `docs/spikes/<name>.md`, and recommend that the user start a fresh session.
-- Do not write files outside the data folder. Its location: `GLYPHDRAFT_DATA_DIR` if set (smoke tests use this), else the per-OS app data folder. Logs go to `<data>/logs/`.
+- Do not write files outside the data folder. Its location: `GLYPHDRAFT_DATA_DIR` if set (smoke tests use this), else the per-OS app data folder. Logs go to `<data>/logs/`, ONNX Runtime natives to `<data>/native/`. Known exceptions: ONNX Runtime makes an empty `onnxruntime-java*` folder in the system temp folder (it removes it on normal exit; a forced kill leaves it); Skiko is still to be checked.
 
 ## Git and CI
 
@@ -64,6 +64,9 @@ Version lives only in `gradle.properties` (`appVersion`). Packages land in `dist
 - Paths: do not hardcode `\` or `/`; directory enumeration order is not guaranteed; file names are case-sensitive on Linux; a zip made on Windows loses the executable bit (Linux packages are tar.gz built on Linux).
 - Pin runner images (`ubuntu-24.04`, `windows-2022`), not `-latest`.
 - The Linux job installs: `xvfb libgl1 libx11-6 libxext6 libxrender1 libxtst6 libxi6 libfontconfig1 fonts-dejavu-core libfreetype6 binutils` (jpackage needs `objcopy` from binutils). Verified by a green run on 2026-11-13 (PR #1); add a library here when a new one is needed.
+- `java.io.tmpdir` cannot be changed from `main` (JDK 17+ reads it once at startup); only a `-D` JVM option works, and a packaged app does not know its data folder. So ONNX Runtime is pointed at `<data>/native/` with `onnxruntime.native.path` (`OnnxNativeLibraries.prepare`, called before first use). The packaged JVM runs with `-XX:-UsePerfData` so that no `hsperfdata` file is written to the temp folder.
+- `desktopApp` swaps the ONNX Runtime jar for a copy trimmed to the build host's OS (`trimOnnxruntime`; 55 MB to 7 MB); the Android APK is limited to `arm64-v8a` and `x86_64`. An engine library that is added later must be checked for both.
+- In PowerShell functions, native program output becomes part of the return value; pipe it to `Out-Host` (see `Invoke-Gradle`), otherwise `-not (f)` is never true and a failed Gradle run goes unnoticed.
 - The JVM and Skiko (Compose's renderer) may write to the temp or cache folder (e.g. `hsperfdata`, extracted native library); check in M0 and list it here, since the app promises to write only to its data folder.
 - The license plugin is applied per module: applied once at the root it fails with "resolution ... without an exclusive lock" under Gradle 9. New licenses go into `config/allowed-licenses.json` only after review.
 - `local.properties` needs forward slashes in `sdk.dir`; backslashes are read as escapes and Gradle fails with "filename ... syntax is incorrect".
