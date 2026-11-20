@@ -19,6 +19,16 @@ android {
         }
     }
 
+    packaging {
+        resources {
+            // The JavaCPP jars carry GraalVM native-image metadata with the same path in each; Android does not use it.
+            excludes += "META-INF/native-image/**"
+            // The same jars also carry C headers, CMake and pkg-config files under lib/<abi>/. The installer extracts
+            // everything under lib/<abi>/ as a native library and rejects the APK ("Failed to extract native libraries").
+            excludes += listOf("lib/*/include/**", "lib/*/lib/**", "lib/*/tesseract", "lib/*/tesseract/**", "lib/*/share/**")
+        }
+    }
+
     buildFeatures {
         buildConfig = true
     }
@@ -36,4 +46,10 @@ dependencies {
     implementation(project(":ui"))
     implementation(project(":engine"))
     implementation(libs.androidx.activity.compose)
+    // Native libraries of the JavaCPP presets, one jar per ABI of the filter above.
+    for (platform in listOf("android-arm64", "android-x86_64")) {
+        runtimeOnly("${libs.javacpp.get()}:$platform")
+        runtimeOnly("${libs.tesseract.get()}:$platform")
+        runtimeOnly("${libs.leptonica.get()}:$platform")
+    }
 }

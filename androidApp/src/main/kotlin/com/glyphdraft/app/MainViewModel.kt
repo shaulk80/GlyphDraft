@@ -9,6 +9,7 @@ import com.glyphdraft.core.Outcome
 import com.glyphdraft.core.ResultBridge
 import com.glyphdraft.core.stub.StubOcrEngine
 import com.glyphdraft.engine.OnnxSelfTest
+import com.glyphdraft.engine.TesseractSelfTest
 import com.glyphdraft.ui.state.AppController
 import kotlinx.coroutines.launch
 
@@ -29,11 +30,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
 
     init {
-        // Proves that ONNX Runtime loads on this device; scripts/smoke-android.sh looks for the line in logcat.
+        // Proves that ONNX Runtime and Tesseract load on this device; scripts/smoke-android.sh looks for the lines.
         viewModelScope.launch {
             when (val outcome = OnnxSelfTest.run()) {
                 is Outcome.Success -> Log.i(TAG, outcome.value)
                 is Outcome.Failure -> Log.e(TAG, "engine self-test failed: ${outcome.message}", outcome.cause)
+            }
+
+            when (val outcome = TesseractSelfTest.run()) {
+                is Outcome.Success -> Log.i(TAG, outcome.value)
+                is Outcome.Failure -> Log.e(TAG, "tesseract self-test failed: ${outcome.message}", outcome.cause)
             }
         }
     }

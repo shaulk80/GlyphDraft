@@ -34,4 +34,12 @@ if ! adb logcat -d -s GlyphDraft:I | grep -q "engine self-test: ok"; then
   exit 1
 fi
 
+# Same for the JavaCPP Tesseract and Leptonica native libraries.
+if ! adb logcat -d -s GlyphDraft:I | grep -q "tesseract self-test: ok"; then
+  echo "Tesseract self-test did not report ok"
+  adb logcat -d -s GlyphDraft:V | tail -n 40
+  adb logcat -d | grep -i -B2 -A12 "UnsatisfiedLinkError\|javacpp\|tesseract" | tail -n 60
+  exit 1
+fi
+
 echo "Android smoke test passed"

@@ -23,6 +23,15 @@ subprojects {
     }
 }
 
+// The JavaCPP platform name of the OS the build runs on (desktop packages are built on their own OS). JavaCPP
+// libraries are added per platform as classifier jars; only the host's jars go into the app image.
+extra["javacppHostPlatform"] =
+    run {
+        val os = if (System.getProperty("os.name").startsWith("Windows", ignoreCase = true)) "windows" else "linux"
+        val arch = if (System.getProperty("os.arch") in listOf("aarch64", "arm64")) "arm64" else "x86_64"
+        "$os-$arch"
+    }
+
 // Warnings are errors for all Kotlin code (the build must have no warnings).
 subprojects {
     tasks.withType<KotlinCompilationTask<*>>().configureEach {
