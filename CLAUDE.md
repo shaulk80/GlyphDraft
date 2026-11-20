@@ -72,7 +72,7 @@ Version lives only in `gradle.properties` (`appVersion`). Packages land in `dist
 - `local.properties` needs forward slashes in `sdk.dir`; backslashes are read as escapes and Gradle fails with "filename ... syntax is incorrect".
 - `gradlew` made on Windows has no executable bit in git; run `git update-index --chmod=+x gradlew` when adding it (the build script also calls it through `sh`).
 - JavaCPP (Tesseract, Leptonica) unpacks about 20 MB of natives on the desktop; `JavaCppNativeLibraries.prepare` sets `org.bytedeco.javacpp.cachedir` to `<data>/native/javacpp` before first use. The native jars are classifier jars chosen by the app (`desktopApp`: the build host's platform from `javacppHostPlatform` in the root build file; `androidApp`: `android-arm64` and `android-x86_64`). On Android the same jars also carry C headers, CMake files and a `tesseract` executable under `lib/<abi>/`, and the installer then fails with "Failed to extract native libraries"; `androidApp` excludes them in `packaging.resources` (also the duplicate `META-INF/native-image`). The two JavaCPP libraries add about 34 MB to the APK.
-- Model files are large: never commit them; they download on first use into the data folder (design in M2).
+- Model files are large: never commit them; they download on first use into `<data>/models` (`engine/.../models`, decision 0007). `ModelManifest` pins each file by commit-pinned URL, SHA-256 and size; to change a model, change all three together. `RealDownloadTest` hits the real servers and runs only with `GLYPHDRAFT_NETWORK_TESTS=1`; run it after touching the manifest.
 
 ## Definition of done
 

@@ -1,0 +1,13 @@
+# 0007: Model store and download
+
+Date: 2026-11-20. Status: proposed (M2 task 4; the owner accepts by merging the pull request).
+
+- **Problem.** Models are too large to ship (PP-OCRv5 packs 13 to 22 MB, Hebrew 1 MB) and must never be committed; they are downloaded on first use into the data folder, checked, and then work offline.
+- **Manifest in code, pinned.** `ModelManifest` (engine module) lists every file with URL, SHA-256 and size. URLs name a fixed commit of the model repository (Hugging Face `PaddlePaddle/*_onnx`, GitHub `tessdata_fast`), not `main`, so a changed file upstream cannot reach users; a test requires https and a commit hash in each URL. A Kotlin object instead of a JSON resource: no parser and no resource loading on Android. Updating a model means changing revision, hash and size together.
+- **Packs.** `latin` (en, de, fr, es), `eslav` (ru), `cjk` (zh, ja), `hebrew`. The PP-OCRv5 packs each include the shared text detector (4.8 MB); `ModelPack.sizeBytes` counts it, but a file that is already on disk is not downloaded again, so the real download of a second pack is smaller than the number shown. Each PP-OCRv5 recognizer comes with its `inference.yml` (the character dictionary).
+- **On disk.** `<data>/models/<path from the manifest>` (`ppocrv5/det/`, `ppocrv5/latin/`, `tessdata/heb.traineddata`, ...). A pack counts as installed when all its files exist with the manifest size. A file gets its final name only after size and SHA-256 matched (written to `<name>.part`, then an atomic move), so size at start is enough to trust it and start stays fast; a file corrupted afterwards with the same size is not noticed.
+- **No resume.** An interrupted or cancelled download starts again from zero (files are at most 17 MB, so a range request, its server support and a partial-file hash would cost more than they save). Files of a pack that finished before the failure stay.
+- **`HttpURLConnection`** for the transfer: the same on the JVM and Android, no new dependency or license. Cancelling the coroutine closes the connection, so a blocked read stops at once.
+- **Failures** are `Outcome.Failure` with a message the UI can show (cannot reach the server, HTTP status, wrong size, checksum mismatch, I/O error); the exception, if any, is in `cause` for the caller to log.
+- **Tests.** A local `HttpServer` in the JVM tests (success, shared file, corrupt, wrong size, HTTP errors, no network, cancel, two installs at once). One opt-in test, `RealDownloadTest`, downloads two small packs from the real servers (`GLYPHDRAFT_NETWORK_TESTS=1`); CI does not run it.
+- **Not decided here.** Where the apps get the data folder on Android (`filesDir`) and the download dialog: task 8. Deleting installed packs: not planned for v0.1.0.
