@@ -1,6 +1,6 @@
 # GlyphDraft: status
 
-Updated: 2026-11-15. Keep this file under 3 KB. History belongs in git, pull requests and the Releases page, not here.
+Updated: 2026-11-20. Keep this file under 3 KB. History belongs in git, pull requests and the Releases page, not here.
 
 ## Now
 
@@ -8,7 +8,7 @@ M0 and M1 are done and merged (PRs #1, #4). `v0.0.1` is a pre-release (unsigned,
 
 ## Next
 
-- M2: OCR with language detection, first real release v0.1.0 (`docs/plan.md`, 10 tasks drafted). Engine choice is proposed in `decisions/0005`: PP-OCRv5 on ONNX Runtime, Tesseract only for Hebrew if needed. Owner to review plan and 0005; then task 1 (spike and fixtures) decides it.
+- M2: OCR with language detection, first real release v0.1.0 (`docs/plan.md`, 10 tasks). Task 1 (spike and fixtures) is done on branch `m2/task-1-spike`: PP-OCRv5 on ONNX Runtime reads Latin, Cyrillic, Han and Japanese at 0 to 1.6 % CER; no PaddleOCR model reads Hebrew, Tesseract `heb` does (0.0 %, via JavaCPP), so plan task 7 stays. Report `docs/spikes/m2-ocr-engines.md`. `decisions/0005` is accepted. Next: task 2 (engine types in `core`).
 - Before v0.1.0: Android release keystore and CI secrets (decisions/0002, plan task 9).
 
 ## Open

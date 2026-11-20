@@ -1,6 +1,6 @@
 # 0005: OCR and language-detection engines for M2
 
-Date: 2026-11-20. Status: **proposed**, not accepted. The owner accepts it after the spike (M2 task 1) has measured the shortlist on real images; the "Open" list below says what the spike must settle.
+Date: 2026-11-20. Status: **accepted** by the owner on 2026-11-20, after the spike (M2 task 1, `docs/spikes/m2-ocr-engines.md`) measured the shortlist on 11 generated fixtures on the Windows JVM. Its results are in "Spike result" below and supersede items 2 to 4 of the original proposal.
 
 - **Problem.** M2 needs on-device text recognition and language detection that run on Windows, Linux and Android from shared Kotlin code, cover Cyrillic, Latin, CJK and Hebrew (Hebrew is in the language picker since M1), have licenses the allow-list accepts (Apache 2.0, MIT) and download their models on first use (never committed).
 
@@ -31,6 +31,15 @@ Date: 2026-11-20. Status: **proposed**, not accepted. The owner accepts it after
 3. **Language detection:** script detection first; then Optimaize or Tiny Lingua, whichever scores better on the OCR output of the fixtures, limited to the languages the installed models support.
 4. **Choosing the recognizer when no language was given:** the open design question. Options: run the default model, read the script of its output and re-run with the matching recognizer; or run every installed recognizer and keep the most confident result. The spike measures both on mixed-script fixtures.
 
+## Spike result (2026-11-20, details in `docs/spikes/m2-ocr-engines.md`)
+
+1. PP-OCRv5 mobile det plus the `PP-OCRv5_mobile_rec` (zh, en, ja), `latin` and `eslav` recognizers read every non-Hebrew fixture at 0 to 1.6 % CER (character error rate), 70 to 150 ms per page. Models are official `PaddlePaddle/*_onnx` repos, Apache 2.0, 4.8 MB detector and 8 to 16.5 MB per recognizer; SHA-256 recorded in the spike file. Detection needs oriented boxes (axis-aligned boxes read a 3.5 degree skew at 70 % CER).
+2. **Hebrew: no PP-OCRv5 recognizer exists** (all five tried read it at 98 to 100 % CER). Tesseract `heb` reads it at 0.0 % (`tessdata_fast`, 0.96 MB). Task 7 is needed. Wrapper: **JavaCPP presets** (`org.bytedeco:tesseract`), one code path for JVM and Android, natives for Windows, Linux and Android of about 2 MB each; `tess4j` ships only a Windows DLL and is rejected.
+3. **No language given:** run the Tesseract `heb` probe first if Hebrew is installed (mean confidence 93 on Hebrew, 18 to 51 elsewhere; use 80). Otherwise detect once, run each installed recognizer on the two longest lines, read all lines with the most confident one. Running the zh/en/ja model first and reading the script of its output fails for Cyrillic.
+4. **ONNX Runtime** `com.microsoft.onnxruntime:onnxruntime:1.32.0` (MIT) covers Windows and Linux in one jar (55.7 MB; trim macOS symbols from the app image). It extracts 20.7 MB of DLLs to `java.io.tmpdir` on every start and leaves them; setting `java.io.tmpdir` to `<data>/tmp` in `main` keeps it inside the data folder (verified). JavaCPP extracts to `~/.javacpp/cache` (property `org.bytedeco.javacpp.cachedir`, untested).
+5. **Language detection libraries:** Optimaize last released 2016 (dropped); Lingua 1.2.2 (Apache 2.0, last release 2022, 80 MB jar) is the only candidate left on Maven Central and must be restricted to our languages; decided in task 6.
+6. Not measured: Linux, Android, real photographs, handwriting. On clean rendered pages Tesseract matched PP-OCRv5, so the choice of PP-OCRv5 as the main engine rests on its published photo accuracy; the M2 hand test is the check, with Tesseract for all languages as the fallback.
+
 ## Costs and risks
 
 - Models are downloaded from a host we do not run (the PaddleOCR project's release files or the model repository); URL and SHA-256 are pinned in a manifest in the repo so a changed file is refused.
@@ -38,16 +47,16 @@ Date: 2026-11-20. Status: **proposed**, not accepted. The owner accepts it after
 - The JVM package grows by the ONNX Runtime native libraries (to be measured); the Android APK grows by its `.so` files per ABI (can be limited with ABI splits).
 - Run time on a phone CPU is not known; the spike measures it on the emulator only, a real device waits for M6.
 
-## Open (the spike must answer)
+## Open after the spike
 
-- Does any PP-OCRv5 recognizer read Hebrew? If not: Tesseract for Hebrew, as above.
-- Model sizes and where the ONNX files come from (official `PaddlePaddle/*_onnx` releases or a conversion we make); licenses of each file confirmed.
-- Accuracy and time per image on the fixture set for each shortlisted engine; detection accuracy on short OCR output.
-- Which `onnxruntime` JVM artifact covers Windows and Linux in one dependency (not confirmed by the search done for this draft).
+- ONNX Runtime and JavaCPP Tesseract on Android (emulator): tasks 3 and 7.
+- Whether `org.bytedeco.javacpp.cachedir` redirects the JavaCPP cache into the data folder: task 3.
+- Lingua restricted to our languages: size, accuracy on OCR output: task 6.
+- Accuracy on real photographs: M2 hand test (task 10).
 
-## Model sources (candidates for the spike; none opened or downloaded yet)
+## Model sources (confirmed in the spike on 2026-11-20)
 
-URLs come from web search results, not from opened pages. Task 1 confirms each one, reads the model card for the license, lists the exact files (model and dictionary) and records the SHA-256 of each; those values become the pinned manifest of M2 task 4. Models go into a git-ignored folder, never into the repo.
+The `PaddlePaddle/*_onnx` repos below exist and carry the Apache 2.0 tag (the `eslav`, `latin`, `cyrillic` and `PP-OCRv5_mobile_*` ones were downloaded and hashed; see the spike file); the community conversions listed as fallback were not needed. Task 4 turns the recorded SHA-256 values into the pinned manifest. Models go into a git-ignored folder, never into the repo.
 
 Preferred: official PaddlePaddle repos on Hugging Face (Apache 2.0 expected, to be confirmed per card).
 
