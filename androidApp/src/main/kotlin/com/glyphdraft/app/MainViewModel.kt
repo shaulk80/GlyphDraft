@@ -7,6 +7,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.glyphdraft.core.Outcome
 import com.glyphdraft.core.ResultBridge
+import com.glyphdraft.core.stub.StubModelCatalog
+import com.glyphdraft.core.stub.StubModelInstaller
 import com.glyphdraft.core.stub.StubOcrEngine
 import com.glyphdraft.engine.OnnxSelfTest
 import com.glyphdraft.engine.TesseractSelfTest
@@ -21,12 +23,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val imageBridge = ResultBridge<String, Uri>()
     val saveBridge = ResultBridge<String, Uri>()
 
+    // Stub models until task 8b: nothing is installed, so the first recognition shows the download dialog.
+    private val catalog = StubModelCatalog(installed = emptySet())
+
     val controller =
         AppController(
             scope = viewModelScope,
             engine = StubOcrEngine(),
             picker = AndroidImagePicker(application.contentResolver, imageBridge),
             saver = AndroidTextSaver(application.contentResolver, saveBridge),
+            catalog = catalog,
+            installer = StubModelInstaller(catalog),
         )
 
     init {

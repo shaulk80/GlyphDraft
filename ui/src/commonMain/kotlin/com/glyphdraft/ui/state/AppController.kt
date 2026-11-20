@@ -3,6 +3,9 @@ package com.glyphdraft.ui.state
 import com.glyphdraft.core.ImageInput
 import com.glyphdraft.core.ImagePicker
 import com.glyphdraft.core.Language
+import com.glyphdraft.core.ModelCatalog
+import com.glyphdraft.core.ModelInstaller
+import com.glyphdraft.core.ModelPack
 import com.glyphdraft.core.OcrEngine
 import com.glyphdraft.core.Outcome
 import com.glyphdraft.core.RecognitionResult
@@ -24,9 +27,13 @@ class AppController(
     private val engine: OcrEngine,
     private val picker: ImagePicker,
     private val saver: TextSaver,
+    catalog: ModelCatalog,
+    installer: ModelInstaller,
 ) {
-    private val mutableState = MutableStateFlow(AppState())
-    private var recognizeJob: Job? = null
+    private val mutableState =
+        MutableStateFlow(AppState(packs = catalog.packs, installedPackIds = catalog.installedPackIds.value))
+    private val installFlow = InstallFlow(mutableState, catalog, installer)
+    private var workJob: Job? = null
 
     val state: StateFlow<AppState> = mutableState.asStateFlow()
 
@@ -43,24 +50,62 @@ class AppController(
         mutableState.update { it.copy(language = language) }
     }
 
+    /** Reads the chosen image; when the models for the language are not installed, offers the download first. */
     fun recognize() {
         val image = state.value.image
-        if (image == null) {
+        if (image == null || !state.value.canRecognize) {
             return
         }
 
-        recognizeJob =
-            launchExclusive(Activity.Recognizing) {
-                when (val outcome = engine.recognize(image, state.value.language)) {
-                    is Outcome.Success -> showResult(outcome.value)
-                    is Outcome.Failure -> showNotice(outcome.message, isError = true)
+        val pack = installFlow.packNeededFor(state.value.language)
+        if (pack != null) {
+            installFlow.offer(pack, thenRecognize = true)
+            return
+        }
+
+        workJob = launchExclusive(Activity.Recognizing) { read(image) }
+    }
+
+    /** Offers the download of [pack] from the settings screen; nothing is recognised afterwards. */
+    fun requestInstall(pack: ModelPack) {
+        if (state.value.busy || state.value.installPrompt != null || state.value.isInstalled(pack)) {
+            return
+        }
+
+        installFlow.offer(pack, thenRecognize = false)
+    }
+
+    /** The user agreed to the download of the offered pack (or asked to retry a failed one). */
+    fun confirmInstall() {
+        val prompt = state.value.installPrompt
+        if (prompt == null || prompt.running) {
+            return
+        }
+
+        workJob =
+            launchExclusive(Activity.Installing) {
+                val installed = installFlow.run(prompt)
+                val image = state.value.image
+                if (installed && prompt.thenRecognize && image != null) {
+                    mutableState.update { it.copy(activity = Activity.Recognizing) }
+                    read(image)
                 }
             }
     }
 
+    /** Closes the download dialog; a running download is cancelled and its partial file removed. */
+    fun dismissInstall() {
+        if (state.value.activity == Activity.Installing) {
+            workJob?.cancel()
+        } else {
+            installFlow.dismiss()
+        }
+    }
+
+    /** Cancels a running download or recognition. */
     fun cancelRecognition() {
-        if (state.value.activity == Activity.Recognizing) {
-            recognizeJob?.cancel()
+        if (state.value.activity == Activity.Recognizing || state.value.activity == Activity.Installing) {
+            workJob?.cancel()
         }
     }
 
@@ -98,12 +143,15 @@ class AppController(
         }
     }
 
-    /** The system Back key: cancels a running recognition, otherwise goes back one screen (see [AppState.handlesBack]). */
+    /**
+     * The system Back key: cancels a running download or recognition, closes the download dialog, otherwise goes back
+     * one screen (see [AppState.handlesBack]).
+     */
     fun handleBack() {
-        if (state.value.activity == Activity.Recognizing) {
-            cancelRecognition()
-        } else {
-            back()
+        when {
+            state.value.installPrompt != null -> dismissInstall()
+            state.value.activity == Activity.Recognizing -> cancelRecognition()
+            else -> back()
         }
     }
 
@@ -118,6 +166,13 @@ class AppController(
     /** Also preselects the language on the Home screen, so the change is visible at once. */
     fun setDefaultLanguage(language: Language?) {
         mutableState.update { it.copy(settings = it.settings.copy(defaultLanguage = language), language = language) }
+    }
+
+    private suspend fun read(image: ImageInput) {
+        when (val outcome = engine.recognize(image, state.value.language)) {
+            is Outcome.Success -> showResult(outcome.value)
+            is Outcome.Failure -> showNotice(outcome.message, isError = true)
+        }
     }
 
     private fun acceptPickedImage(outcome: Outcome.Success<ImageInput?>) {

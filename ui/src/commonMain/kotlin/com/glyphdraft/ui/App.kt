@@ -36,6 +36,7 @@ fun App(controller: AppController, version: String, onDarkThemeResolved: (Boolea
     GlyphDraftTheme(dark) {
         Surface(modifier = Modifier.fillMaxSize()) {
             AppScaffold(state, controller, version)
+            InstallDialog(state, controller)
         }
     }
 }

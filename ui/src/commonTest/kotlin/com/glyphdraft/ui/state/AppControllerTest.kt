@@ -2,11 +2,15 @@ package com.glyphdraft.ui.state
 
 import com.glyphdraft.core.ImageInput
 import com.glyphdraft.core.ImagePicker
+import com.glyphdraft.core.InstallProgress
 import com.glyphdraft.core.Language
+import com.glyphdraft.core.ModelInstaller
+import com.glyphdraft.core.ModelPack
 import com.glyphdraft.core.OcrEngine
 import com.glyphdraft.core.Outcome
 import com.glyphdraft.core.RecognitionResult
 import com.glyphdraft.core.TextSaver
+import com.glyphdraft.core.stub.StubModelCatalog
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
@@ -34,8 +38,10 @@ private class FakePicker(var outcome: Outcome<ImageInput?> = Outcome.Success(pho
 private class FakeEngine(var outcome: Outcome<RecognitionResult> = Outcome.Success(sample)) : OcrEngine {
     var gate: CompletableDeferred<Unit>? = null
     var lastHint: Language? = null
+    var calls = 0
 
     override suspend fun recognize(image: ImageInput, languageHint: Language?): Outcome<RecognitionResult> {
+        calls++
         lastHint = languageHint
         gate?.await()
         return outcome
@@ -53,13 +59,34 @@ private class FakeSaver(var outcome: Outcome<Boolean> = Outcome.Success(true)) :
     }
 }
 
+/** Marks the pack installed after a successful call; waits on [gate] first when set, so a test can cancel mid-download. */
+private class FakeInstaller(private val catalog: () -> StubModelCatalog) : ModelInstaller {
+    var outcomes = ArrayDeque<Outcome<Unit>>()
+    var gate: CompletableDeferred<Unit>? = null
+    val installed = ArrayList<String>()
+
+    override suspend fun install(pack: ModelPack, onProgress: (InstallProgress) -> Unit): Outcome<Unit> {
+        onProgress(InstallProgress(pack.sizeBytes / 2, pack.sizeBytes))
+        gate?.await()
+        val outcome = outcomes.removeFirstOrNull() ?: Outcome.Success(Unit)
+        if (outcome is Outcome.Success) {
+            installed.add(pack.id)
+            catalog().markInstalled(pack.id)
+        }
+
+        return outcome
+    }
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class AppControllerTest {
     private val picker = FakePicker()
     private val engine = FakeEngine()
     private val saver = FakeSaver()
+    private var catalog = StubModelCatalog()
+    private val installer = FakeInstaller { catalog }
 
-    private fun TestScope.controller() = AppController(this, engine, picker, saver)
+    private fun TestScope.controller() = AppController(this, engine, picker, saver, catalog, installer)
 
     private fun TestScope.controllerWithImage(): AppController {
         val controller = controller()
@@ -251,5 +278,130 @@ class AppControllerTest {
             controller.showCopied()
             controller.openSettings()
             assertNull(controller.state.value.notice)
+        }
+
+    @Test
+    fun recognizeOffersTheDownloadOnlyWhenTheModelsAreMissing() =
+        runTest {
+            // language, installed packs, pack offered (null: reads at once)
+            val cases =
+                listOf(
+                    Triple(Language.Russian, emptySet<String>(), "eslav"),
+                    Triple(null, emptySet<String>(), "latin"),
+                    Triple(Language.English, setOf("eslav"), "latin"),
+                    Triple(Language.English, setOf("latin"), null),
+                    Triple(null, setOf("hebrew"), null),
+                )
+
+            for ((language, installedPacks, offered) in cases) {
+                catalog = StubModelCatalog(installed = installedPacks)
+                engine.calls = 0
+                val controller = controllerWithImage()
+                controller.selectLanguage(language)
+
+                controller.recognize()
+                advanceUntilIdle()
+
+                assertEquals(offered, controller.state.value.installPrompt?.pack?.id, "language $language, installed $installedPacks")
+                assertEquals(if (offered == null) 1 else 0, engine.calls, "language $language, installed $installedPacks")
+            }
+        }
+
+    @Test
+    fun confirmingTheDownloadInstallsThePackAndThenReads() =
+        runTest {
+            catalog = StubModelCatalog(installed = emptySet())
+            val controller = controllerWithImage()
+            controller.selectLanguage(Language.Russian)
+            controller.recognize()
+
+            controller.confirmInstall()
+            advanceUntilIdle()
+
+            val state = controller.state.value
+            assertEquals(listOf("eslav"), installer.installed)
+            assertEquals(setOf("eslav"), state.installedPackIds)
+            assertNull(state.installPrompt)
+            assertEquals(sample, state.result)
+            assertEquals(Screen.Result, state.screen)
+            assertEquals(Activity.Idle, state.activity)
+        }
+
+    @Test
+    fun installingFromSettingsDoesNotRecognize() =
+        runTest {
+            catalog = StubModelCatalog(installed = emptySet())
+            val controller = controllerWithImage()
+            val hebrew = catalog.packs.first { it.id == "hebrew" }
+
+            controller.requestInstall(hebrew)
+            assertEquals(hebrew, controller.state.value.installPrompt?.pack)
+            controller.confirmInstall()
+            advanceUntilIdle()
+
+            assertEquals(setOf("hebrew"), controller.state.value.installedPackIds)
+            assertNull(controller.state.value.installPrompt)
+            assertEquals(0, engine.calls)
+            assertEquals(Screen.Home, controller.state.value.screen)
+        }
+
+    @Test
+    fun failedDownloadKeepsTheDialogWithItsMessageAndRetrySucceeds() =
+        runTest {
+            catalog = StubModelCatalog(installed = emptySet())
+            installer.outcomes.add(Outcome.Failure("No network."))
+            val controller = controllerWithImage()
+            controller.recognize()
+            controller.confirmInstall()
+            advanceUntilIdle()
+
+            val failed = controller.state.value
+            assertEquals("No network.", failed.installPrompt?.error)
+            assertEquals(false, failed.installPrompt?.running)
+            assertEquals(Activity.Idle, failed.activity)
+            assertEquals(emptySet(), failed.installedPackIds)
+
+            controller.confirmInstall()
+            advanceUntilIdle()
+
+            assertNull(controller.state.value.installPrompt)
+            assertEquals(sample, controller.state.value.result)
+        }
+
+    @Test
+    fun cancellingTheDownloadAndDismissingTheOfferCloseTheDialog() =
+        runTest {
+            catalog = StubModelCatalog(installed = emptySet())
+            val controller = controllerWithImage()
+            controller.recognize()
+
+            controller.dismissInstall()
+            assertNull(controller.state.value.installPrompt)
+
+            installer.gate = CompletableDeferred()
+            controller.recognize()
+            controller.confirmInstall()
+            runCurrent()
+            assertEquals(Activity.Installing, controller.state.value.activity)
+            assertEquals(InstallProgress(bytesDone = 6_815_744, bytesTotal = 13_631_488), controller.state.value.installPrompt?.progress)
+
+            controller.handleBack()
+            advanceUntilIdle()
+
+            assertNull(controller.state.value.installPrompt)
+            assertEquals(Activity.Idle, controller.state.value.activity)
+            assertEquals(emptySet(), controller.state.value.installedPackIds)
+            assertEquals(0, engine.calls)
+        }
+
+    @Test
+    fun pickersListEveryKnownLanguageAndMarkTheOnesThatNeedADownload() =
+        runTest {
+            catalog = StubModelCatalog(installed = setOf("latin"))
+            val state = controller().state.value
+
+            assertEquals(Language.Supported.toSet(), state.languages.toSet())
+            assertEquals("German", state.labelOf(Language.German))
+            assertEquals("Hebrew (download needed)", state.labelOf(Language.Hebrew))
         }
 }

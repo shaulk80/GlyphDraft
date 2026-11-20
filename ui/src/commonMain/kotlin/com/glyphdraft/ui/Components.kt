@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.glyphdraft.core.Language
+import com.glyphdraft.ui.state.AppState
 import com.glyphdraft.ui.state.Notice
 
 /** Widest the content grows; on a wide window it stays readable and centred. */
@@ -35,19 +36,26 @@ val WideLayoutMinWidth: Dp = 600.dp
 
 const val AUTO_DETECT_LABEL = "Auto-detect"
 
-/** Dropdown over [Language.Supported] plus "Auto-detect" (null). */
+/** Dropdown over the languages of the model catalog ([AppState.languages]) plus "Auto-detect" (null). */
 @Composable
-fun LanguageDropdown(selected: Language?, enabled: Boolean, onSelected: (Language?) -> Unit, modifier: Modifier = Modifier) {
+fun LanguageDropdown(
+    selected: Language?,
+    state: AppState,
+    enabled: Boolean,
+    onSelected: (Language?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     var expanded by remember { mutableStateOf(false) }
+    val labelOf = { language: Language? -> if (language == null) AUTO_DETECT_LABEL else state.labelOf(language) }
     Box(modifier) {
         OutlinedButton(onClick = { expanded = true }, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
-            Text(selected?.displayName ?: AUTO_DETECT_LABEL)
+            Text(labelOf(selected))
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            val options: List<Language?> = listOf(null) + Language.Supported
+            val options: List<Language?> = listOf(null) + state.languages
             for (option in options) {
                 DropdownMenuItem(
-                    text = { Text(option?.displayName ?: AUTO_DETECT_LABEL) },
+                    text = { Text(labelOf(option)) },
                     onClick = {
                         expanded = false
                         onSelected(option)
