@@ -16,4 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "GlyphDraft"
 
-include(":core", ":ui", ":desktopApp", ":androidApp")
+include(":core", ":ui", ":engine", ":desktopApp", ":androidApp")

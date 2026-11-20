@@ -17,7 +17,7 @@ plugins {
 subprojects {
     pluginManager.apply("com.github.jk1.dependency-license-report")
     extensions.configure<com.github.jk1.license.LicenseReportExtension> {
-        configurations = arrayOf("runtimeClasspath", "jvmRuntimeClasspath", "releaseRuntimeClasspath")
+        configurations = arrayOf("runtimeClasspath", "jvmRuntimeClasspath", "androidRuntimeClasspath", "releaseRuntimeClasspath")
         filters = arrayOf(LicenseBundleNormalizer())
         allowedLicensesFile = rootProject.file("config/allowed-licenses.json")
     }
