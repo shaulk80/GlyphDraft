@@ -1,0 +1,13 @@
+# 0008: PP-OCRv5 pipeline in the engine module
+
+Date: 2026-11-20. Status: proposed (M2 task 5; the owner accepts by merging the pull request).
+
+- **Problem.** Task 5 turns the spike's JVM-only pipeline into code that runs on the JVM and on Android, from the models of decision 0007.
+- **Own pixel type, no platform imaging code.** The pipeline works on `PixelImage` (`0xRRGGBB` ints). Decoding is behind the small interface `ImageDecoder`: `AwtImageDecoder` (ImageIO, transparent pixels onto white, size limit 64 MP) for the desktop; the Android decoder (`BitmapFactory`) comes with the wiring in task 8, where the emulator can run it. Resize (bilinear) and the rotated crop are written out in `ImageOps`, so JVM and Android give the same numbers. `expect`/`actual` was not needed: the decoder is passed in.
+- **Oriented boxes by principal axis** (from the spike: axis-aligned boxes read a 3.5 degree skew at 70 % CER). The box is fitted in original-image pixels (the map is scaled before the fit, since the resized map has slightly different x and y scales). A blob less than 1.5 times longer than thick stays axis-aligned: its principal axis is noise, and a single letter must not be cut out sideways. Vertical text lines are not handled.
+- **Reading order** (`ReadingOrder`): rows from the top by box centre, a box joins a row within half the thinner thickness; boxes of a row left to right, joined by a space, rows by a line break. The spike's fixed 20 px buckets broke on tall text.
+- **Detect once, read with any recognizer.** `PaddleOcr` holds the detector; `detectRows` and `read(image, rows, recognizer)` are separate so that task 6 can try several recognizers on one detection. `PaddleModels` opens the detector and a recognizer from the installed packs; a recognizer whose class count differs from its dictionary is refused at load.
+- **The dictionary is read by hand** from `inference.yml` (`CharacterDictionary`): the file is machine-written, and a YAML library that works on Android would be a dependency for 20 lines. The three pinned files parse to the class counts of their models (checked at load).
+- **No `OcrEngine` yet.** Language choice (task 6) and Hebrew (task 7) decide which recognizer runs; the engine class is built there.
+- **Tests.** Unit tests need no models. `FixtureOcrTest` reads the 10 PP-OCRv5 fixtures with the real models (0.0 % CER on all, the limit is 2 %, 5 % for the mixed page) and needs them on disk: `GLYPHDRAFT_MODELS_DIR`, or `engine/build/test-models`, filled by the installer when `GLYPHDRAFT_NETWORK_TESTS=1`; otherwise it does nothing and says so. CI does not run it until task 8 (model cache and download in CI).
+- **Not handled:** EXIF rotation of photos, vertical text, Android decoding (task 8).

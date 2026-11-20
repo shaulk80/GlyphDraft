@@ -21,3 +21,10 @@ fun <T> Outcome<T>.valueOrNull(): T? =
         is Outcome.Success -> value
         is Outcome.Failure -> null
     }
+
+/** Runs [next] on the value of a success; a failure passes through unchanged. */
+fun <T, R> Outcome<T>.flatMap(next: (T) -> Outcome<R>): Outcome<R> =
+    when (this) {
+        is Outcome.Success -> next(value)
+        is Outcome.Failure -> this
+    }
