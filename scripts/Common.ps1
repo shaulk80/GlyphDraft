@@ -32,19 +32,58 @@ function Get-AppVersion {
     return $line.Matches[0].Groups[1].Value.Trim()
 }
 
-function Invoke-Gradle {
-    # Returns $true on success; the caller decides what a failure means.
+# Failures that say the dependency server, not our code, was the problem (Maven Central answers 429 to busy CI runners).
+$script:TransientGradleFailure = 'Received status code 429|Too Many Requests|Read timed out|Connect timed out|Connection reset'
+$script:GradleRetryDelaySeconds = 30
+
+function ConvertTo-PlainLine {
+    # A line of program output as text: stderr lines arrive as error records whose message is the line.
+    param($Line)
+    if ($Line -is [System.Management.Automation.ErrorRecord]) {
+        return $Line.Exception.Message
+    }
+    return "$Line"
+}
+
+function Invoke-GradleOnce {
     # Out-Host: the program's output must not become part of the return value (an array is always "true").
-    param([string[]]$GradleArguments)
+    # Tee-Object keeps a copy of the output in $LogFile so the caller can look at why it failed. Gradle reports
+    # errors on stderr, so that is merged in; ConvertTo-PlainLine turns each line into plain text (Windows PowerShell
+    # 5.1 would otherwise print stderr lines as red error records).
+    param([string[]]$GradleArguments, [string]$LogFile)
     Write-Host "gradle $($GradleArguments -join ' ')"
     if (Test-IsWindowsHost) {
-        & (Join-Path $script:RepoRoot 'gradlew.bat') @GradleArguments '--console=plain' | Out-Host
+        & (Join-Path $script:RepoRoot 'gradlew.bat') @GradleArguments '--console=plain' 2>&1 | ForEach-Object { ConvertTo-PlainLine $_ } | Tee-Object -FilePath $LogFile | Out-Host
     }
     else {
         # Run through sh so a missing executable bit on gradlew (files made on Windows) does not matter.
-        & sh (Join-Path $script:RepoRoot 'gradlew') @GradleArguments '--console=plain' | Out-Host
+        & sh (Join-Path $script:RepoRoot 'gradlew') @GradleArguments '--console=plain' 2>&1 | ForEach-Object { ConvertTo-PlainLine $_ } | Tee-Object -FilePath $LogFile | Out-Host
     }
     return ($LASTEXITCODE -eq 0)
+}
+
+function Invoke-Gradle {
+    # Returns $true on success; the caller decides what a failure means.
+    # A run that failed only because a dependency download was refused or timed out is repeated once (logged);
+    # any other failure, a failing test for example, is final at once.
+    param([string[]]$GradleArguments)
+    $log = [System.IO.Path]::GetTempFileName()
+    try {
+        if (Invoke-GradleOnce $GradleArguments $log) {
+            return $true
+        }
+
+        if (-not (Select-String -Path $log -Pattern $script:TransientGradleFailure -Quiet)) {
+            return $false
+        }
+
+        Write-Host "RETRY: gradle failed on a dependency download (HTTP 429 or timeout); waiting $($script:GradleRetryDelaySeconds) s and trying once more." -ForegroundColor Yellow
+        Start-Sleep -Seconds $script:GradleRetryDelaySeconds
+        return (Invoke-GradleOnce $GradleArguments $log)
+    }
+    finally {
+        Remove-Item -LiteralPath $log -Force -ErrorAction SilentlyContinue
+    }
 }
 
 function Invoke-Native {
