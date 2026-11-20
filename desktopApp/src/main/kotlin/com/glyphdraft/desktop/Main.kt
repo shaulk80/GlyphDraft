@@ -5,6 +5,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import com.glyphdraft.core.Outcome
+import com.glyphdraft.core.stub.StubModelCatalog
+import com.glyphdraft.core.stub.StubModelInstaller
 import com.glyphdraft.core.stub.StubOcrEngine
 import com.glyphdraft.engine.JavaCppNativeLibraries
 import com.glyphdraft.engine.OnnxNativeLibraries
@@ -36,7 +38,16 @@ fun main() {
             val controller =
                 remember {
                     val chooser = FileKitFileChooser(window, LastFolder(dataDirectory.resolve("last-folder.txt"), log), log)
-                    AppController(scope, StubOcrEngine(), DesktopImagePicker(chooser, log), DesktopTextSaver(chooser, log))
+                    // Stub models until task 8b: nothing is installed, so the first recognition shows the download dialog.
+                    val catalog = StubModelCatalog(installed = emptySet())
+                    AppController(
+                        scope,
+                        StubOcrEngine(),
+                        DesktopImagePicker(chooser, log),
+                        DesktopTextSaver(chooser, log),
+                        catalog,
+                        StubModelInstaller(catalog),
+                    )
                 }
             App(controller, version)
         }

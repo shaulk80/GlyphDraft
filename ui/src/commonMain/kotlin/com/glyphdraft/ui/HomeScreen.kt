@@ -61,7 +61,7 @@ private fun ImageCard(state: AppState, controller: AppController, modifier: Modi
 private fun LanguageSection(state: AppState, controller: AppController) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("2. Language of the text", style = MaterialTheme.typography.titleMedium)
-        LanguageDropdown(selected = state.language, enabled = !state.busy, onSelected = controller::selectLanguage)
+        LanguageDropdown(selected = state.language, state = state, enabled = !state.busy, onSelected = controller::selectLanguage)
     }
 }
 

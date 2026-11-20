@@ -17,7 +17,7 @@ import com.glyphdraft.ui.state.AppController
 import com.glyphdraft.ui.state.AppState
 import com.glyphdraft.ui.state.ThemeMode
 
-/** Theme, default language and which engine is in use. Kept in memory in M1. */
+/** Theme, default language, the language models and which engine is in use. Kept in memory until task 8c. */
 @Composable
 fun SettingsScreen(state: AppState, controller: AppController, version: String) {
     CenteredColumn {
@@ -31,10 +31,12 @@ fun SettingsScreen(state: AppState, controller: AppController, version: String) 
             Text("Default language", style = MaterialTheme.typography.titleMedium)
             LanguageDropdown(
                 selected = state.settings.defaultLanguage,
+                state = state,
                 enabled = true,
                 onSelected = controller::setDefaultLanguage,
             )
         }
+        ModelPackSection(state, controller)
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("Engine", style = MaterialTheme.typography.titleMedium)
             Text("Stub (returns fixed text; real recognition arrives in the next milestone)")

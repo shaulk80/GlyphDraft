@@ -9,6 +9,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -17,6 +18,8 @@ import com.glyphdraft.core.ImageInput
 import com.glyphdraft.core.ImagePicker
 import com.glyphdraft.core.Outcome
 import com.glyphdraft.core.TextSaver
+import com.glyphdraft.core.stub.StubModelCatalog
+import com.glyphdraft.core.stub.StubModelInstaller
 import com.glyphdraft.core.stub.StubOcrEngine
 import com.glyphdraft.ui.state.AppController
 import com.glyphdraft.ui.state.ThemeMode
@@ -74,12 +77,14 @@ class ClickThroughTest {
     private val picker = FakePicker(Outcome.Success(image))
     private val saver = FakeSaver()
     private val clipboard = FakeClipboard()
-    private val controller = AppController(scope, StubOcrEngine(latencyMillis = 0), picker, saver)
+    private val catalog = StubModelCatalog()
+    private val controller =
+        AppController(scope, StubOcrEngine(latencyMillis = 0), picker, saver, catalog, StubModelInstaller(catalog, steps = 2, stepMillis = 0))
 
-    private fun ComposeUiTest.showApp() {
+    private fun ComposeUiTest.showApp(shown: AppController = controller) {
         setContent {
             CompositionLocalProvider(LocalClipboard provides clipboard) {
-                App(controller, "test")
+                App(shown, "test")
             }
         }
     }
@@ -88,8 +93,9 @@ class ClickThroughTest {
         waitUntil(timeoutMillis = WAIT_MILLIS) { onAllNodes(hasText(text, substring = substring)).fetchSemanticsNodes().isNotEmpty() }
     }
 
+    /** Clicks the clickable element showing [text]; a label of the same text elsewhere (a pack row) does not count. */
     private fun ComposeUiTest.click(text: String) {
-        onNodeWithText(text).performClick()
+        onNode(hasText(text) and hasClickAction()).performClick()
     }
 
     @Test
@@ -135,6 +141,39 @@ class ClickThroughTest {
             click("Recognize text")
 
             waitForText("Language: English (detected)")
+        }
+
+    @Test
+    fun firstUseOffersTheDownloadThenReadsAndSettingsListsThePacks() =
+        runComposeUiTest {
+            val empty = StubModelCatalog(installed = emptySet())
+            val firstUse =
+                AppController(scope, StubOcrEngine(latencyMillis = 0), picker, saver, empty, StubModelInstaller(empty, steps = 2, stepMillis = 0))
+            showApp(firstUse)
+
+            click("Choose image…")
+            waitForText("scan.png (3 bytes)")
+            click("Auto-detect")
+            waitForText("Russian (download needed)")
+            click("Russian (download needed)")
+            click("Recognize text")
+            waitForText("Download language models?")
+            waitForText("Russian models", substring = true)
+
+            click("Cancel")
+            waitUntil(timeoutMillis = WAIT_MILLIS) { onAllNodes(hasText("Download language models?")).fetchSemanticsNodes().isEmpty() }
+            onNodeWithText("Recognize text").assertIsEnabled()
+
+            click("Recognize text")
+            waitForText("Download language models?")
+            click("Download")
+            waitForText("Language: Russian (chosen)")
+            assertEquals(setOf("eslav"), firstUse.state.value.installedPackIds)
+
+            click("← Back")
+            click("Settings")
+            waitForText("Language models")
+            waitForText("Download 2.0 MB")
         }
 
     @Test
