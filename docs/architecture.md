@@ -16,7 +16,7 @@ graph TD
 
 | Module | Targets | Holds | State |
 |---|---|---|---|
-| `core` | jvm, android | `Outcome` result type; `OcrEngine` and domain types (`Language`, `ImageInput`, `RecognitionResult`), the `ImagePicker` and `TextSaver` seams, `ResultBridge`, the stub engine | in code (first drafts, M2 may reshape the engine types) |
+| `core` | jvm, android | `Outcome` result type; `OcrEngine`, `LanguageDetector`, `ModelCatalog`, `ModelInstaller` and domain types (`Language`, `ImageInput`, `RecognitionResult`, `ModelPack`), the `ImagePicker` and `TextSaver` seams, `ResultBridge`, stubs | in code (decision 0006); real implementations come in `engine` |
 | `ui` | jvm, android | Compose Multiplatform screens (Home, Result, Settings) and `AppController` (state holder, navigation, actions), shared by both apps | in code |
 | `desktopApp` | jvm | entry point, data folder, file log, FileKit file dialogs, jpackage app image for Windows and Linux | in code |
 | `androidApp` | android | `MainActivity`, `MainViewModel` (composition root), system pickers, manifest, signing | in code |
@@ -26,10 +26,10 @@ Rules: `core` has no UI or platform API. `ui` and `engine` depend only on `core`
 
 ## Engine boundary (the part that must stay swappable)
 
-The engine interfaces live in `core`, one per capability: text from an image (`OcrEngine`), language detection (`LanguageDetector`), translation (`Translator`), speech to text (`SpeechRecognizer`). Names and signatures are not final; M2 fixes the first two. Rules for all of them:
+The engine interfaces live in `core`, one per capability: text from an image (`OcrEngine`), language detection (`LanguageDetector`), translation (`Translator`), speech to text (`SpeechRecognizer`). The first two are fixed in M2 (decision 0006), the others are not. Beside them sit `ModelCatalog` (which model packs exist, which are installed, so which languages work offline) and `ModelInstaller` (download a pack with progress, cancellable). Rules for all of them:
 
 - Calls are suspending and return `Outcome<T>`: failure is a value with a message, not an exception. Long work is cancellable.
-- Inputs are plain data (image bytes or a platform-neutral image type, an optional language hint), never a platform class.
+- Inputs are plain data (encoded image bytes, an optional language hint), never a platform class; the engine decodes the image itself.
 - The composition root picks the implementation from settings. On-device is the default; a cloud engine is a later second implementation of the same interface, chosen the same way (decision 0001).
 
 ## Data flow of the first feature (M2)
@@ -62,5 +62,5 @@ One script, `scripts/build.ps1`, is run by CI and locally: license check, build 
 
 ## Open, to be decided
 
-- M2: the concrete OCR and language-detection engines (Cyrillic and CJK support is a requirement), model format and download design, image type that crosses the engine boundary, the settings model.
+- M2: model manifest and download design (task 4), the settings model (task 8). Engines are chosen in decision 0005.
 - M4, M5: whether handwriting and speech need a larger engine than the first on-device one, and whether that is when the cloud engine arrives.
