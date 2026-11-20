@@ -48,6 +48,31 @@ function Wait-ForLogFile {
     return $false
 }
 
+function Test-EngineSelfTest {
+    # The app loads ONNX Runtime in the background and logs the result; its native files must come from <data>/native.
+    param([string]$DataDirectory, [int]$TimeoutSeconds = 30)
+    $logFile = Join-Path $DataDirectory 'logs/glyphdraft.log'
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $deadline) {
+        $text = Get-Content -LiteralPath $logFile -Raw -ErrorAction SilentlyContinue
+        if ($text -match 'engine self-test: ok') {
+            $libraries = Get-ChildItem -LiteralPath (Join-Path $DataDirectory 'native') -Filter '*onnxruntime.*' -ErrorAction SilentlyContinue
+            if ($null -eq $libraries) {
+                Write-Warning 'Engine self-test passed, but ONNX Runtime was not loaded from <data>/native'
+                return $false
+            }
+            return $true
+        }
+        if ($text -match 'engine self-test failed') {
+            Write-Warning "Engine self-test failed: $(($text -split "`n" | Select-String 'self-test failed') -join ' ')"
+            return $false
+        }
+        Start-Sleep -Seconds 1
+    }
+    Write-Warning "No engine self-test result in the log after $TimeoutSeconds s"
+    return $false
+}
+
 function Stop-ProcessAndWait {
     # Windows keeps files locked until the process has really exited, so wait before deleting them.
     param([System.Diagnostics.Process]$Process)
@@ -75,6 +100,9 @@ function Test-DesktopSmoke {
         $display = Start-VirtualDisplay
         $app = Start-Process -FilePath (Get-LauncherPath $work) -PassThru
         $passed = Wait-ForLogFile (Join-Path $dataDir 'logs') $app
+        if ($passed) {
+            $passed = Test-EngineSelfTest $dataDir
+        }
         Start-Sleep -Seconds 3
         if ($passed -and $app.HasExited) {
             Write-Warning "App exited after starting, code $($app.ExitCode)"

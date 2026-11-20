@@ -26,4 +26,12 @@ if adb logcat -d | grep -q "FATAL EXCEPTION"; then
   exit 1
 fi
 
+# The app runs a tiny ONNX model at start (engine self-test) and logs the result.
+if ! adb logcat -d -s GlyphDraft:I | grep -q "engine self-test: ok"; then
+  echo "Engine self-test did not report ok"
+  adb logcat -d -s GlyphDraft:V | tail -n 40
+  adb logcat -d | grep -i -B2 -A12 "UnsatisfiedLinkError\|onnxruntime" | tail -n 60
+  exit 1
+fi
+
 echo "Android smoke test passed"

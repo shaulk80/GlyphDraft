@@ -13,6 +13,10 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = providers.gradleProperty("appVersion").get()
+        // ONNX Runtime ships four ABIs (about 15 MB each); phones are arm64, the emulator on x86_64 PCs is x86_64.
+        ndk {
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
     }
 
     buildFeatures {
@@ -30,5 +34,6 @@ android {
 
 dependencies {
     implementation(project(":ui"))
+    implementation(project(":engine"))
     implementation(libs.androidx.activity.compose)
 }
