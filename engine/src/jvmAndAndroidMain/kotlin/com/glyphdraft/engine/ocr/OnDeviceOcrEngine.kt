@@ -50,6 +50,7 @@ class OnDeviceOcrEngine(
 
     override fun close() {
         paddle.close()
+        hebrew?.close()
     }
 
     private suspend fun readInLanguage(page: PixelImage, language: Language): Outcome<RecognitionResult> {

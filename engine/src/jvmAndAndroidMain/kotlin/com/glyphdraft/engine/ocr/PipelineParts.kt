@@ -23,10 +23,12 @@ interface PaddleModelSource {
 }
 
 /**
- * Reads Hebrew, which no PP-OCRv5 recognizer can. Task 7 implements it over Tesseract; the engine only needs these two
- * calls, so it can be built and tested before that.
+ * Reads Hebrew, which no PP-OCRv5 recognizer can. [TesseractHebrewReader] is the real one; the engine only needs these
+ * two calls, so tests use fakes.
  */
-interface HebrewReader {
+interface HebrewReader : AutoCloseable {
+    override fun close() {}
+
     /**
      * A quick read to find out whether [image] is Hebrew: the mean word confidence, 0 to 1. The spike measured 0.93 on
      * Hebrew and 0.18 to 0.51 on every other fixture ([OnDeviceOcrEngine.HEBREW_PROBE_THRESHOLD]).
