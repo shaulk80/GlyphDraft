@@ -8,6 +8,7 @@ import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.atomic.AtomicBoolean
 
 /** A local HTTP server for the download tests. Bodies are registered by path; the requested paths are recorded. */
 class TestModelServer : AutoCloseable {
@@ -16,6 +17,7 @@ class TestModelServer : AutoCloseable {
     private val statuses = ConcurrentHashMap<String, Int>()
     private val stalling = ConcurrentHashMap.newKeySet<String>()
     private val release = CountDownLatch(1)
+    private val stopped = AtomicBoolean(false)
 
     /** Paths that were requested, in order. */
     val requests = CopyOnWriteArrayList<String>()
@@ -79,7 +81,9 @@ class TestModelServer : AutoCloseable {
 
     override fun close() {
         release.countDown()
-        server.stop(0)
+        if (stopped.compareAndSet(false, true)) {
+            server.stop(0)
+        }
     }
 
     companion object {

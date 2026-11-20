@@ -20,6 +20,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -165,26 +166,60 @@ class HttpModelInstallerTest {
     }
 
     @Test
-    fun cancellingStopsTheDownloadAndRemovesTheUnfinishedFile() = blocking {
+    fun cancellingReturnsAtOnceEvenWhenTheServerStallsAndTheUnfinishedFileGoesAway() = blocking {
         server.stall("/latin/model.onnx")
         val started = CompletableDeferred<Unit>()
+        // A read timeout far above the test timeouts: the cancel must not wait for it.
+        val patient = HttpModelInstaller(catalog, FileDownloader(connectTimeoutMillis = 2_000, readTimeoutMillis = 120_000))
 
         val job =
             launch(start = CoroutineStart.UNDISPATCHED) {
-                installer.install(latin.pack) { progress ->
+                patient.install(latin.pack) { progress ->
                     if (progress.bytesDone > shared.sizeBytes) {
                         started.complete(Unit)
                     }
                 }
             }
         withTimeout(10_000) { started.await() }
-        withTimeout(10_000) { job.cancelAndJoin() }
+        withTimeout(5_000) { job.cancelAndJoin() }
 
         assertTrue(job.isCancelled)
-        assertNoPartialFiles()
         assertFalse(Files.exists(folder.resolve("latin/model.onnx")))
         assertFalse("latin" in catalog.installedPackIds.value)
         assertTrue(Files.exists(folder.resolve("det/model.onnx")), "a finished file stays for the next try")
+
+        // The transfer that was left blocked ends when the connection does, and takes its partial file with it.
+        server.close()
+        awaitNoPartialFiles()
+    }
+
+    @Test
+    fun anInstallAfterACancelWorksWhileTheOldTransferIsStillEnding() = blocking {
+        server.stall("/latin/model.onnx")
+        val started = CompletableDeferred<Unit>()
+        val patient = HttpModelInstaller(catalog, FileDownloader(connectTimeoutMillis = 2_000, readTimeoutMillis = 120_000))
+        val job =
+            launch(start = CoroutineStart.UNDISPATCHED) {
+                patient.install(latin.pack) { progress ->
+                    if (progress.bytesDone > shared.sizeBytes) {
+                        started.complete(Unit)
+                    }
+                }
+            }
+        withTimeout(10_000) { started.await() }
+        withTimeout(5_000) { job.cancelAndJoin() }
+
+        // Same pack again, now from a server that answers in full; the stalled transfer is still blocked.
+        TestModelServer().use { healthy ->
+            val good = healthy.fileFor("/latin/model.onnx", ByteArray(latinModel.sizeBytes.toInt()) { (it % 241).toByte() }, "latin/model.onnx")
+            val retry = manifest("latin", shared, good)
+            val retryCatalog = FileModelCatalog(listOf(retry), folder)
+
+            val outcome = HttpModelInstaller(retryCatalog).install(retry.pack) {}
+
+            assertIs<Outcome.Success<*>>(outcome)
+            assertTrue("latin" in retryCatalog.installedPackIds.value)
+        }
     }
 
     @Test
@@ -202,9 +237,19 @@ class HttpModelInstallerTest {
         runBlocking { block() }
     }
 
+    private fun partialFiles(): List<Path> =
+        Files.walk(folder).use { stream -> stream.filter { FileDownloader.PARTIAL_SUFFIX in it.name }.toList() }
+
     private fun assertNoPartialFiles() {
-        val partials = Files.walk(folder).use { stream -> stream.filter { it.name.endsWith(FileDownloader.PARTIAL_SUFFIX) }.toList() }
-        assertEquals(emptyList(), partials)
+        assertEquals(emptyList(), partialFiles())
+    }
+
+    private suspend fun awaitNoPartialFiles() {
+        withTimeout(15_000) {
+            while (partialFiles().isNotEmpty()) {
+                delay(50)
+            }
+        }
     }
 
     private fun manifest(id: String, vararg files: ModelFile): PackManifest =

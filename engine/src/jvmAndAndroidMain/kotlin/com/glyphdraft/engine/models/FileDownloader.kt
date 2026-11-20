@@ -13,82 +13,97 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
+import java.util.concurrent.atomic.AtomicLong
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.awaitCancellation
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
- * Downloads one [ModelFile] to its place on disk. The bytes go to `<target>.part`, are hashed on the way, and the file
- * gets its final name by an atomic rename only when size and SHA-256 match; otherwise the partial file is deleted. A
- * download that was interrupted starts again from zero (the files are at most 17 MB). `HttpURLConnection` is used
- * because it is the same on the JVM and on Android and adds no dependency.
+ * Downloads one [ModelFile] to its place on disk. The bytes go to `<target>.part-<n>`, are hashed on the way, and the
+ * file gets its final name by an atomic rename only when size and SHA-256 match; otherwise the partial file is
+ * deleted. A download that was interrupted starts again from zero (the files are at most 17 MB). `HttpURLConnection`
+ * is used because it is the same on the JVM and on Android and adds no dependency.
+ *
+ * The transfer runs in a coroutine of its own, not in the caller's. A blocked socket read cannot be interrupted
+ * (`HttpURLConnection.disconnect()` waits for the read on the JDK), so if the caller were waiting inside the read, a
+ * cancel on a stalled network would hang until the read timeout. Instead the caller is released at once and the
+ * transfer ends by itself at its next chunk or at the read timeout, and deletes its partial file then. Each attempt has
+ * its own partial file name, so a transfer that is still ending cannot disturb the next one.
  */
 class FileDownloader(
     private val connectTimeoutMillis: Int = DEFAULT_CONNECT_TIMEOUT_MILLIS,
     private val readTimeoutMillis: Int = DEFAULT_READ_TIMEOUT_MILLIS,
 ) {
+    private val transfers = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val attempts = AtomicLong()
+
     /**
-     * Expected failures come back as [Outcome.Failure]. Cancelling the calling coroutine closes the connection,
-     * deletes the partial file and rethrows the cancellation. [onBytes] receives the number of bytes of this file
-     * received so far.
+     * Expected failures come back as [Outcome.Failure]. Cancelling the calling coroutine returns at once (by
+     * rethrowing the cancellation) and stops the transfer, which removes its partial file as soon as it ends.
+     * [onBytes] receives the number of bytes of this file received so far; it is not called after a cancel except
+     * possibly once for a chunk that was already being handled.
      */
-    suspend fun download(file: ModelFile, target: Path, onBytes: (Long) -> Unit): Outcome<Unit> =
-        withContext(Dispatchers.IO) {
-            val partial = target.resolveSibling("${target.fileName}$PARTIAL_SUFFIX")
-            try {
-                val outcome = fetch(file, partial, onBytes)
-                if (outcome is Outcome.Failure) {
-                    return@withContext outcome
-                }
-
-                Files.move(partial, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-                Outcome.Success(Unit)
-            } catch (e: IOException) {
-                // A closed connection after a cancel shows up as an IOException; the cancellation wins.
-                coroutineContext.ensureActive()
-                Outcome.Failure(describe(e, file), e)
-            } finally {
-                Files.deleteIfExists(partial)
-            }
-        }
-
-    private suspend fun fetch(file: ModelFile, partial: Path, onBytes: (Long) -> Unit): Outcome<Unit> =
-        coroutineScope {
-            Files.createDirectories(partial.parent)
-            val connection = URI.create(file.url).toURL().openConnection() as HttpURLConnection
-            connection.connectTimeout = connectTimeoutMillis
-            connection.readTimeout = readTimeoutMillis
-            connection.setRequestProperty("User-Agent", USER_AGENT)
-            // A blocked read does not see the cancellation; closing the connection from here makes it fail at once.
-            val closeOnCancel = launch { closeWhenCancelled(connection) }
-            try {
-                download(connection, file, partial, onBytes)
-            } finally {
-                closeOnCancel.cancel()
-                connection.disconnect()
-            }
-        }
-
-    private suspend fun closeWhenCancelled(connection: HttpURLConnection) {
+    suspend fun download(file: ModelFile, target: Path, onBytes: (Long) -> Unit): Outcome<Unit> {
+        val transfer = transfers.async { transfer(file, target, onBytes) }
         try {
-            awaitCancellation()
-        } finally {
-            connection.disconnect()
+            return transfer.await()
+        } catch (e: CancellationException) {
+            transfer.cancel()
+            throw e
         }
     }
 
-    private suspend fun download(connection: HttpURLConnection, file: ModelFile, partial: Path, onBytes: (Long) -> Unit): Outcome<Unit> {
-        if (connection.responseCode != HttpURLConnection.HTTP_OK) {
-            return Outcome.Failure("The download server answered HTTP ${connection.responseCode} for ${file.path}.")
-        }
+    private suspend fun transfer(file: ModelFile, target: Path, onBytes: (Long) -> Unit): Outcome<Unit> {
+        val partial = target.resolveSibling("${target.fileName}$PARTIAL_SUFFIX-${attempts.incrementAndGet()}")
+        try {
+            Files.createDirectories(partial.parent)
+            deleteStalePartials(target)
+            val outcome = fetch(file, partial, onBytes)
+            if (outcome is Outcome.Failure) {
+                return outcome
+            }
 
-        val digest = MessageDigest.getInstance("SHA-256")
-        val received = connection.inputStream.use { copy(it, partial, digest, file.sizeBytes, onBytes) }
-        return verify(file, received, digest)
+            coroutineContext.ensureActive()
+            Files.move(partial, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+            return Outcome.Success(Unit)
+        } catch (e: IOException) {
+            // A failure after a cancel is not worth reporting; the cancellation wins.
+            coroutineContext.ensureActive()
+            return Outcome.Failure(describe(e, file), e)
+        } finally {
+            Files.deleteIfExists(partial)
+        }
+    }
+
+    /** Partial files of earlier attempts that ended without cleaning up (the app was killed). */
+    private fun deleteStalePartials(target: Path) {
+        Files.newDirectoryStream(target.parent, "${target.fileName}$PARTIAL_SUFFIX-*").use { stale ->
+            for (path in stale) {
+                Files.deleteIfExists(path)
+            }
+        }
+    }
+
+    private suspend fun fetch(file: ModelFile, partial: Path, onBytes: (Long) -> Unit): Outcome<Unit> {
+        val connection = URI.create(file.url).toURL().openConnection() as HttpURLConnection
+        connection.connectTimeout = connectTimeoutMillis
+        connection.readTimeout = readTimeoutMillis
+        connection.setRequestProperty("User-Agent", USER_AGENT)
+        try {
+            if (connection.responseCode != HttpURLConnection.HTTP_OK) {
+                return Outcome.Failure("The download server answered HTTP ${connection.responseCode} for ${file.path}.")
+            }
+
+            val digest = MessageDigest.getInstance("SHA-256")
+            val received = connection.inputStream.use { copy(it, partial, digest, file.sizeBytes, onBytes) }
+            return verify(file, received, digest)
+        } finally {
+            connection.disconnect()
+        }
     }
 
     /** Returns the number of bytes written; stops reading shortly after [limit] is passed, so a wrong file cannot fill the disk. */
