@@ -20,7 +20,7 @@ graph TD
 | `ui` | jvm, android | Compose Multiplatform screens (Home, Result, Settings) and `AppController` (state holder, navigation, actions), shared by both apps | in code |
 | `desktopApp` | jvm | entry point, data folder, file log, FileKit file dialogs, jpackage app image for Windows and Linux | in code |
 | `androidApp` | android | `MainActivity`, `MainViewModel` (composition root), system pickers, manifest, signing | in code |
-| `engine` | jvm, android | on-device implementations of the engine interfaces (ONNX Runtime): `OnnxSelfTest` (tiny model, run at app start and logged), `OnnxNativeLibraries` (desktop: native libraries into the data folder) | in code (M2 task 3); OCR comes in tasks 5 to 7 |
+| `engine` | jvm, android | on-device implementations of the engine interfaces (ONNX Runtime; Tesseract and Leptonica through JavaCPP): `OnnxSelfTest` (tiny model) and `TesseractSelfTest` (library load), both run at app start and logged; `OnnxNativeLibraries` and `JavaCppNativeLibraries` (desktop: native libraries into `<data>/native`) | in code (M2 task 3); OCR comes in tasks 5 to 7 |
 
 Rules: `core` has no UI or platform API. `ui` and `engine` depend only on `core`, never on each other. The two app modules are the composition roots: they create the engines and pass them to the UI (dotted arrows). Nothing else constructs an engine.
 

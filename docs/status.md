@@ -8,7 +8,7 @@ M0 and M1 are done and merged (PRs #1, #4). `v0.0.1` is a pre-release (unsigned,
 
 ## Next
 
-- M2: OCR with language detection, first real release v0.1.0 (`docs/plan.md`, 10 tasks). Task 1 (spike, merged, PR #9): PP-OCRv5 on ONNX Runtime reads Latin, Cyrillic, Han and Japanese at 0 to 1.6 % CER; Hebrew only via Tesseract `heb` (JavaCPP), so plan task 7 stays (`docs/spikes/m2-ocr-engines.md`, `decisions/0005` accepted). Task 2 (engine types in `core`, merged, PR #10, `decisions/0006`). Task 3a is on branch `m2/task-3-engine-module`: `engine` module with ONNX Runtime, a tiny-model self-test the apps run at start (checked by both smoke tests), natives loaded from `<data>/native`, package 71 MB zip, APK 86 MB. Also fixed: `scripts/Common.ps1` never noticed a failed Gradle run. Next: 3b (JavaCPP Tesseract smoke), then task 4.
+- M2: OCR with language detection, first real release v0.1.0 (`docs/plan.md`, 10 tasks). Task 1 (spike, merged, PR #9): PP-OCRv5 on ONNX Runtime reads Latin, Cyrillic, Han and Japanese at 0 to 1.6 % CER; Hebrew only via Tesseract `heb` (JavaCPP), so plan task 7 stays (`docs/spikes/m2-ocr-engines.md`, `decisions/0005` accepted). Task 2 (engine types in `core`, merged, PR #10, `decisions/0006`). Task 3a (merged, PR #11): `engine` module with ONNX Runtime and a tiny-model self-test checked by both smoke tests. Task 3b is on branch `m2/task-3b-tesseract-smoke`: JavaCPP Tesseract and Leptonica load on Windows and the Android emulator (self-test in both apps and smoke tests), JavaCPP natives go to `<data>/native/javacpp`; package 84 MB zip (was 71), APK 120 MB (was 86). Linux is checked by CI only. Next: task 4 (model store and download).
 - Before v0.1.0: Android release keystore and CI secrets (decisions/0002, plan task 9).
 
 ## Open
