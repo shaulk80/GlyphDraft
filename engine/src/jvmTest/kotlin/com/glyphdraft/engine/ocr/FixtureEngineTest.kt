@@ -12,8 +12,8 @@ import kotlinx.coroutines.runBlocking
 
 /**
  * The whole engine on the fixtures with the real models: no language given (the engine chooses the recognizer from the
- * image and tells the language from the text it read) and the right language given. Hebrew is Tesseract's (task 7), so
- * its fixture is not here. Needs the models on disk like [FixtureOcrTest] (see [TestModels]) and does nothing without.
+ * image and tells the language from the text it read) and the right language given. Hebrew goes through Tesseract, the
+ * rest through PP-OCRv5. Needs the models on disk like [FixtureOcrTest] (see [TestModels]) and does nothing without.
  * `$env:GLYPHDRAFT_NETWORK_TESTS = "1"; .\gradlew :engine:jvmTest --tests "*FixtureEngineTest*"`
  */
 class FixtureEngineTest {
@@ -30,18 +30,20 @@ class FixtureEngineTest {
             Case("zh-noise", Language.Chinese, 0.02),
             Case("ja-clean", Language.Japanese, 0.02),
             Case("mixed-clean", Language.Russian, 0.05),
+            Case("he-clean", Language.Hebrew, 0.02),
         )
 
     @Test
     fun theEngineReadsEveryFixtureWithAndWithoutALanguage() {
-        val packs = setOf(ModelManifest.LATIN, ModelManifest.ESLAV, ModelManifest.CJK)
+        val packs = setOf(ModelManifest.LATIN, ModelManifest.ESLAV, ModelManifest.CJK, ModelManifest.HEBREW)
         val catalog = TestModels.catalogWith("FixtureEngineTest", packs)
         if (catalog == null) {
             return
         }
 
         val problems = ArrayList<String>()
-        OnDeviceOcrEngine(AwtImageDecoder(), catalog, PaddleReader(PaddleModels(catalog)), TextLanguageDetector()).use { engine ->
+        val paddle = PaddleReader(PaddleModels(catalog))
+        OnDeviceOcrEngine(AwtImageDecoder(), catalog, paddle, TextLanguageDetector(), TesseractHebrewReader(catalog)).use { engine ->
             for (case in cases) {
                 problems.addAll(check(engine, case, hint = null))
                 problems.addAll(check(engine, case, hint = case.language))
