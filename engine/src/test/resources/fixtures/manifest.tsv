@@ -1,0 +1,12 @@
+name	language	script
+en-clean	en	Latin
+de-clean	de	Latin
+ru-clean	ru	Cyrillic
+zh-clean	zh	Han
+ja-clean	ja	Japanese
+he-clean	he	Hebrew
+mixed-clean	en+ru	Latin+Cyrillic
+en-skew	en	Latin
+ru-noise	ru	Cyrillic
+de-blur	de	Latin
+zh-noise	zh	Han
