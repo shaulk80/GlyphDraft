@@ -12,9 +12,9 @@ import java.io.IOException
 import java.nio.file.Files
 
 /** Opens the installed PP-OCRv5 models of a [FileModelCatalog]. A pack that is not installed is a [Outcome.Failure]. */
-class PaddleModels(private val catalog: FileModelCatalog) {
+class PaddleModels(private val catalog: FileModelCatalog) : PaddleModelSource {
     /** The text detector; every recognizer pack includes it. */
-    fun openDetector(): Outcome<TextDetector> {
+    override fun openDetector(): Outcome<TextDetector> {
         val missing = missingFile(ModelManifest.detectorModel, ModelManifest.detectorConfig)
         if (missing != null) {
             return missing
@@ -24,7 +24,7 @@ class PaddleModels(private val catalog: FileModelCatalog) {
     }
 
     /** The recognizer of the pack [packId] (`latin`, `eslav` or `cjk`). */
-    fun openRecognizer(packId: String): Outcome<TextRecognizer> {
+    override fun openRecognizer(packId: String): Outcome<TextRecognizer> {
         val files = RECOGNIZER_FILES[packId]
         if (files == null) {
             return Outcome.Failure("The pack '$packId' has no PP-OCRv5 recognizer.")
