@@ -49,6 +49,10 @@ dependencies {
     implementation(libs.filekit.dialogs)
     onnxruntimeSource(libs.onnxruntime.jvm)
     runtimeOnly(files(trimOnnxruntime))
+    val javacppPlatform = rootProject.extra["javacppHostPlatform"]
+    runtimeOnly("${libs.javacpp.get()}:$javacppPlatform")
+    runtimeOnly("${libs.tesseract.get()}:$javacppPlatform")
+    runtimeOnly("${libs.leptonica.get()}:$javacppPlatform")
     testImplementation(libs.kotlin.test)
 }
 

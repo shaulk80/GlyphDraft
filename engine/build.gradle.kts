@@ -31,15 +31,27 @@ kotlin {
         commonMain.dependencies {
             api(project(":core"))
         }
+        // The JavaCPP presets (Tesseract, Leptonica) have the same Java API on both targets as well. Their native
+        // libraries are classifier jars chosen by the app that is built (desktopApp: host OS; androidApp: ABIs).
         jvmMain.dependencies {
             api(libs.onnxruntime.jvm)
+            api(libs.tesseract)
+            api(libs.leptonica)
         }
         androidMain.dependencies {
             api(libs.onnxruntime.android)
+            api(libs.tesseract)
+            api(libs.leptonica)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.coroutines.test)
+        }
+        jvmTest.dependencies {
+            val platform = rootProject.extra["javacppHostPlatform"]
+            runtimeOnly("${libs.javacpp.get()}:$platform")
+            runtimeOnly("${libs.tesseract.get()}:$platform")
+            runtimeOnly("${libs.leptonica.get()}:$platform")
         }
     }
 }

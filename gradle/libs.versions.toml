@@ -8,6 +8,9 @@ coroutines = "1.11.0"
 filekit = "0.17.0"
 license-report = "3.1.5"
 onnxruntime = "1.32.0"
+javacpp = "1.5.14"
+tesseract = "5.5.3-1.5.14"
+leptonica = "1.87.0-1.5.14"
 
 [libraries]
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "compose" }
@@ -22,6 +25,9 @@ filekit-dialogs = { module = "io.github.vinceglb:filekit-dialogs", version.ref =
 coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "coroutines" }
 onnxruntime-jvm = { module = "com.microsoft.onnxruntime:onnxruntime", version.ref = "onnxruntime" }
 onnxruntime-android = { module = "com.microsoft.onnxruntime:onnxruntime-android", version.ref = "onnxruntime" }
+javacpp = { module = "org.bytedeco:javacpp", version.ref = "javacpp" }
+tesseract = { module = "org.bytedeco:tesseract", version.ref = "tesseract" }
+leptonica = { module = "org.bytedeco:leptonica", version.ref = "leptonica" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activity" }
 
 [plugins]

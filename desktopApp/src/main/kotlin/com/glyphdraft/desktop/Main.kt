@@ -6,8 +6,10 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import com.glyphdraft.core.Outcome
 import com.glyphdraft.core.stub.StubOcrEngine
+import com.glyphdraft.engine.JavaCppNativeLibraries
 import com.glyphdraft.engine.OnnxNativeLibraries
 import com.glyphdraft.engine.OnnxSelfTest
+import com.glyphdraft.engine.TesseractSelfTest
 import com.glyphdraft.ui.App
 import com.glyphdraft.ui.state.AppController
 import kotlinx.coroutines.CoroutineScope
@@ -41,7 +43,7 @@ fun main() {
     }
 }
 
-/** Loads ONNX Runtime in the background and logs the result; the smoke test of the package looks for it. */
+/** Loads ONNX Runtime and Tesseract in the background and logs the results; the smoke test of the package looks for them. */
 private fun runEngineSelfTest(dataDirectory: Path, log: FileLog) {
     CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
         // Before the first use of ONNX Runtime, so that it loads from the data folder and not from the temp folder.
@@ -53,6 +55,16 @@ private fun runEngineSelfTest(dataDirectory: Path, log: FileLog) {
         when (val outcome = OnnxSelfTest.run()) {
             is Outcome.Success -> log.info(outcome.value)
             is Outcome.Failure -> log.info("engine self-test failed: ${outcome.message}")
+        }
+
+        val cache = JavaCppNativeLibraries.prepare(dataDirectory.resolve("native").resolve("javacpp"))
+        if (cache is Outcome.Failure) {
+            log.info("JavaCPP stays in its default cache folder: ${cache.message}")
+        }
+
+        when (val outcome = TesseractSelfTest.run()) {
+            is Outcome.Success -> log.info(outcome.value)
+            is Outcome.Failure -> log.info("tesseract self-test failed: ${outcome.message}")
         }
     }
 }
