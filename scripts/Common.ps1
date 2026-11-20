@@ -34,14 +34,15 @@ function Get-AppVersion {
 
 function Invoke-Gradle {
     # Returns $true on success; the caller decides what a failure means.
+    # Out-Host: the program's output must not become part of the return value (an array is always "true").
     param([string[]]$GradleArguments)
     Write-Host "gradle $($GradleArguments -join ' ')"
     if (Test-IsWindowsHost) {
-        & (Join-Path $script:RepoRoot 'gradlew.bat') @GradleArguments '--console=plain'
+        & (Join-Path $script:RepoRoot 'gradlew.bat') @GradleArguments '--console=plain' | Out-Host
     }
     else {
         # Run through sh so a missing executable bit on gradlew (files made on Windows) does not matter.
-        & sh (Join-Path $script:RepoRoot 'gradlew') @GradleArguments '--console=plain'
+        & sh (Join-Path $script:RepoRoot 'gradlew') @GradleArguments '--console=plain' | Out-Host
     }
     return ($LASTEXITCODE -eq 0)
 }
@@ -49,7 +50,7 @@ function Invoke-Gradle {
 function Invoke-Native {
     # Runs a native program and returns $true when its exit code is 0.
     param([string]$Program, [string[]]$ProgramArguments)
-    & $Program @ProgramArguments
+    & $Program @ProgramArguments | Out-Host
     return ($LASTEXITCODE -eq 0)
 }
 
