@@ -12,7 +12,7 @@ data class Language(val code: String, val displayName: String) {
         val Chinese = Language("zh", "Chinese")
         val Japanese = Language("ja", "Japanese")
 
-        /** Languages offered in the pickers. M2 replaces this with what the installed models support. */
+        /** Languages offered in the pickers. M2 task 8 replaces this with [ModelCatalog.knownLanguages]. */
         val Supported: List<Language> =
             listOf(English, Russian, Hebrew, German, French, Spanish, Chinese, Japanese)
     }
