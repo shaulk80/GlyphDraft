@@ -29,4 +29,20 @@ class OutcomeTest {
             assertEquals(expected, input.valueOrNull())
         }
     }
+
+    @Test
+    fun flatMapRunsTheNextStepOnlyAfterSuccess() {
+        val cases: List<Pair<Outcome<Int>, Outcome<String>>> =
+            listOf(
+                Outcome.Success(2) to Outcome.Success("2!"),
+                Outcome.Success(-1) to Outcome.Failure("negative"),
+                Outcome.Failure("bad input") to Outcome.Failure("bad input"),
+            )
+
+        for ((input, expected) in cases) {
+            val actual = input.flatMap { if (it < 0) Outcome.Failure("negative") else Outcome.Success("$it!") }
+
+            assertEquals(expected, actual)
+        }
+    }
 }
