@@ -8,8 +8,8 @@ M0 and M1 are done and merged (PRs #1, #4). `v0.0.1` is a pre-release (unsigned,
 
 ## Next
 
-- M2: OCR with language detection, first real release v0.1.0 (`docs/plan.md`, 10 tasks). Merged: 1 spike (PP-OCRv5 on ONNX Runtime; Hebrew only via Tesseract, `docs/spikes/m2-ocr-engines.md`), 2 engine types in `core`, 3a/3b ONNX Runtime and JavaCPP Tesseract load on desktop and Android, 4 model store and download (`decisions/0007`; the apps do not use it yet).
-- Task 5 (text detection and recognition, branch `m2/task-5-text-detection-recognition`, `decisions/0008`): `engine/.../ocr` has the pipeline (decode, detect, oriented crop, recognize, reading order); the 10 PP-OCRv5 fixtures read at 0.0 % CER on the JVM with the real models (opt-in test, not in CI yet). The Android image decoder comes with task 8. Next: task 6 (language detection and recognizer choice).
+- M2: OCR with language detection, first real release v0.1.0 (`docs/plan.md`, 10 tasks). Merged: 1 spike (PP-OCRv5 on ONNX Runtime; Hebrew only via Tesseract, `docs/spikes/m2-ocr-engines.md`), 2 engine types in `core`, 3a/3b ONNX Runtime and JavaCPP Tesseract load on desktop and Android, 4 model store and download (`decisions/0007`; the apps do not use it yet), 5 PP-OCRv5 detection and recognition (`decisions/0008`; the Android image decoder comes with task 8).
+- Task 6 (language detection, branch `m2/task-6-language-detection`, `decisions/0009`): own two-step `TextLanguageDetector` (script, then word markers for en/de/fr/es; no Lingua, its jar is 80 MB) and `OnDeviceOcrEngine` (hint, or Hebrew probe seam, then the best recognizer on the two longest lines). With real models (opt-in `FixtureEngineTest`) all 10 fixtures come out in the right language at 0.0 % CER, with and without a language. Next: task 7 (Hebrew via Tesseract, `HebrewReader`).
 - Before v0.1.0: Android release keystore and CI secrets (decisions/0002, plan task 9).
 
 ## Open
