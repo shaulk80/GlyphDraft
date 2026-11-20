@@ -30,16 +30,16 @@ data class OcrPage(val rows: List<List<OcrLine>>) {
 }
 
 /**
- * Detection, cropping and recognition over a [TextDetector]. The steps are separate so that a caller that has several
+ * Detection, cropping and recognition over a [BoxDetector]. The steps are separate so that a caller that has several
  * recognizers (one per script) detects once: [detectRows], then [read] with the recognizer it chose.
  */
-class PaddleOcr(private val detector: TextDetector) {
+class PaddleOcr(private val detector: BoxDetector) {
     /** Finds the text boxes of [image] and puts them in reading order. */
     suspend fun detectRows(image: PixelImage): Outcome<List<List<TextBox>>> =
         withContext(Dispatchers.Default) { detector.detect(image).map(ReadingOrder::rows) }
 
     /** Reads the boxes of [rows] with [recognizer]; lines that come out empty are dropped. Cancellable between lines. */
-    suspend fun read(image: PixelImage, rows: List<List<TextBox>>, recognizer: TextRecognizer): Outcome<OcrPage> =
+    suspend fun read(image: PixelImage, rows: List<List<TextBox>>, recognizer: LineRecognizer): Outcome<OcrPage> =
         withContext(Dispatchers.Default) {
             val pageRows = ArrayList<List<OcrLine>>()
             for (row in rows) {
@@ -65,7 +65,7 @@ class PaddleOcr(private val detector: TextDetector) {
         }
 
     /** Detects and reads in one go. */
-    suspend fun read(image: PixelImage, recognizer: TextRecognizer): Outcome<OcrPage> =
+    suspend fun read(image: PixelImage, recognizer: LineRecognizer): Outcome<OcrPage> =
         when (val detected = detectRows(image)) {
             is Outcome.Failure -> detected
             is Outcome.Success -> read(image, detected.value, recognizer)

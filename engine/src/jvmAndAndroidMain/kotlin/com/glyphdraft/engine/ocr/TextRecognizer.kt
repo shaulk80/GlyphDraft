@@ -14,11 +14,11 @@ import kotlin.math.roundToInt
 class TextRecognizer internal constructor(
     private val session: OrtSession,
     private val dictionary: CharacterDictionary,
-) : AutoCloseable {
+) : LineRecognizer {
     private val inputName = session.inputNames.first()
 
     /** The text of [line] and its confidence. */
-    fun recognize(line: PixelImage): Outcome<LineText> {
+    override fun recognize(line: PixelImage): Outcome<LineText> {
         val height = INPUT_HEIGHT
         val width = max(MIN_WIDTH, min(MAX_WIDTH, (line.width * height / line.height.toDouble()).roundToInt()))
         val input = normalise(ImageOps.resize(line, width, height))

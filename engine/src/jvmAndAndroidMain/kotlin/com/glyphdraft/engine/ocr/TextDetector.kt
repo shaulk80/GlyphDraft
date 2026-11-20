@@ -14,11 +14,11 @@ import kotlin.math.roundToInt
 class TextDetector internal constructor(
     private val session: OrtSession,
     private val postProcessor: DetectionPostProcessor = DetectionPostProcessor(),
-) : AutoCloseable {
+) : BoxDetector {
     private val inputName = session.inputNames.first()
 
     /** Oriented boxes in pixels of [image], in no particular order (see [ReadingOrder]). */
-    fun detect(image: PixelImage): Outcome<List<TextBox>> {
+    override fun detect(image: PixelImage): Outcome<List<TextBox>> {
         val width = fitToModel(image.width, image)
         val height = fitToModel(image.height, image)
         val input = normalise(ImageOps.resize(image, width, height))
