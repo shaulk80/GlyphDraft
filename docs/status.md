@@ -8,8 +8,8 @@ M0 and M1 are done and merged (PRs #1, #4). `v0.0.1` is a pre-release (unsigned,
 
 ## Next
 
-- M2: OCR with language detection, first real release v0.1.0 (`docs/plan.md`).
-- Before v0.1.0: Android release keystore and CI secrets (decisions/0002).
+- M2: OCR with language detection, first real release v0.1.0 (`docs/plan.md`, 10 tasks drafted). Engine choice is proposed in `decisions/0005`: PP-OCRv5 on ONNX Runtime, Tesseract only for Hebrew if needed. Owner to review plan and 0005; then task 1 (spike and fixtures) decides it.
+- Before v0.1.0: Android release keystore and CI secrets (decisions/0002, plan task 9).
 
 ## Open
 
