@@ -8,8 +8,8 @@ M0 and M1 are done and merged (PRs #1, #4). `v0.0.1` is a pre-release (unsigned,
 
 ## Next
 
-- M2: OCR with language detection, first real release v0.1.0 (`docs/plan.md`, 10 tasks). Merged: 1 spike (PP-OCRv5 on ONNX Runtime; Hebrew only via Tesseract, `docs/spikes/m2-ocr-engines.md`), 2 engine types in `core`, 3a/3b ONNX Runtime and JavaCPP Tesseract load on desktop and Android, 4 model store and download (`decisions/0007`; the apps do not use it yet), 5 PP-OCRv5 detection and recognition (`decisions/0008`; the Android image decoder comes with task 8).
-- Task 6 (language detection, branch `m2/task-6-language-detection`, `decisions/0009`): own two-step `TextLanguageDetector` (script, then word markers for en/de/fr/es; no Lingua, its jar is 80 MB) and `OnDeviceOcrEngine` (hint, or Hebrew probe seam, then the best recognizer on the two longest lines). With real models (opt-in `FixtureEngineTest`) all 10 fixtures come out in the right language at 0.0 % CER, with and without a language. Next: task 7 (Hebrew via Tesseract, `HebrewReader`).
+- M2: OCR with language detection, first real release v0.1.0 (`docs/plan.md`, 10 tasks). Merged: 1 spike (PP-OCRv5 on ONNX Runtime; Hebrew only via Tesseract, `docs/spikes/m2-ocr-engines.md`), 2 engine types in `core`, 3a/3b ONNX Runtime and JavaCPP Tesseract load on desktop and Android, 4 model store and download (`decisions/0007`; the apps do not use it yet), 5 PP-OCRv5 detection and recognition (`decisions/0008`; the Android image decoder comes with task 8), 6 language detection and `OnDeviceOcrEngine` (`decisions/0009`: own detector, no Lingua).
+- Task 7 (Hebrew, branch `m2/task-7-hebrew-tesseract`, `decisions/0010`): `TesseractHebrewReader` (JavaCPP Tesseract, `heb`) plugged into `OnDeviceOcrEngine`. With real models (opt-in `FixtureEngineTest`, `FixtureHebrewTest`) all 11 fixtures come out in the right language at 0.0 % CER, with and without a language; Hebrew probe 0.92, others at most 0.50. Not yet run on Android (task 8). Next: task 8, wire the engine into the apps.
 - Before v0.1.0: Android release keystore and CI secrets (decisions/0002, plan task 9).
 
 ## Open
