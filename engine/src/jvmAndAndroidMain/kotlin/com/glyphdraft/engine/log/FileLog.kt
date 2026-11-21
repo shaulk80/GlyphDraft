@@ -17,9 +17,10 @@ class FileLog(private val file: Path) {
     private fun append(level: String, message: String): Outcome<Unit> =
         try {
             Files.createDirectories(file.parent)
-            Files.writeString(
+            // Files.writeString is missing on some Android versions (minSdk is 26); Files.write exists everywhere.
+            Files.write(
                 file,
-                "${Instant.now()} $level $message\n",
+                "${Instant.now()} $level $message\n".toByteArray(Charsets.UTF_8),
                 StandardOpenOption.CREATE,
                 StandardOpenOption.APPEND,
             )
