@@ -5,7 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import com.glyphdraft.ui.state.ThemeMode
+import com.glyphdraft.core.ThemeMode
 
 /** Resolves the user's theme choice; "System" follows the operating system. */
 @Composable

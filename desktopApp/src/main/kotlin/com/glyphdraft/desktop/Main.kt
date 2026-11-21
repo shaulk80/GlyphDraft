@@ -6,6 +6,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import com.glyphdraft.core.LoggingOcrEngine
 import com.glyphdraft.core.Outcome
+import com.glyphdraft.core.knownLanguages
 import com.glyphdraft.engine.JavaCppNativeLibraries
 import com.glyphdraft.engine.OnDeviceEngine
 import com.glyphdraft.engine.OnnxNativeLibraries
@@ -13,6 +14,7 @@ import com.glyphdraft.engine.OnnxSelfTest
 import com.glyphdraft.engine.TesseractSelfTest
 import com.glyphdraft.engine.log.FileLog
 import com.glyphdraft.engine.ocr.AwtImageDecoder
+import com.glyphdraft.engine.settings.FileSettingsStore
 import com.glyphdraft.ui.App
 import com.glyphdraft.ui.state.AppController
 import kotlinx.coroutines.CoroutineScope
@@ -55,6 +57,11 @@ fun main() {
                         DesktopTextSaver(chooser, log),
                         engine.catalog,
                         engine.installer,
+                        FileSettingsStore(
+                            dataDirectory.resolve("settings.properties"),
+                            engine.catalog.knownLanguages().toList(),
+                            log,
+                        ),
                     )
                 }
             App(controller, version)

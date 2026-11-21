@@ -81,6 +81,11 @@ if (-not (Invoke-Gradle $GradleTasks.LicenseCheck)) {
 }
 
 Write-Step 'Build and test (warnings are errors, configured in Gradle)'
+if ($Target -ne 'android') {
+    # The engine tests with the real models (fixtures in every language) and the real download test run only with
+    # this variable; the models land in engine/build/test-models (cached by CI). Android host tests have no engine tests.
+    $env:GLYPHDRAFT_NETWORK_TESTS = '1'
+}
 if (-not (Invoke-Gradle ($tasks.Test + $tasks.Build))) {
     Stop-Build 'build or tests'
 }

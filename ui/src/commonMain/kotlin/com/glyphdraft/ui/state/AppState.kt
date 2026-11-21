@@ -5,10 +5,9 @@ import com.glyphdraft.core.InstallProgress
 import com.glyphdraft.core.Language
 import com.glyphdraft.core.ModelPack
 import com.glyphdraft.core.RecognitionResult
+import com.glyphdraft.core.Settings
 
 enum class Screen { Home, Result, Settings }
-
-enum class ThemeMode { System, Light, Dark }
 
 /** What the app is busy with. Only one thing at a time: a second request while busy is ignored. */
 enum class Activity { Idle, Picking, Installing, Recognizing, Saving }
@@ -28,13 +27,6 @@ data class InstallPrompt(
 
 /** A message for the user: an error or a plain confirmation. */
 data class Notice(val text: String, val isError: Boolean)
-
-/** User settings. In memory only in M1; persistence is designed with the settings model in M2. */
-data class Settings(
-    val theme: ThemeMode = ThemeMode.System,
-    /** Language preselected on the Home screen; null means "auto-detect". */
-    val defaultLanguage: Language? = null,
-)
 
 data class AppState(
     /** Last entry is the visible screen; Home is always at the bottom. */

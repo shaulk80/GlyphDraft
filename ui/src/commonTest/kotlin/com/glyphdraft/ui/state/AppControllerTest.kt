@@ -9,7 +9,10 @@ import com.glyphdraft.core.ModelPack
 import com.glyphdraft.core.OcrEngine
 import com.glyphdraft.core.Outcome
 import com.glyphdraft.core.RecognitionResult
+import com.glyphdraft.core.Settings
+import com.glyphdraft.core.SettingsStore
 import com.glyphdraft.core.TextSaver
+import com.glyphdraft.core.ThemeMode
 import com.glyphdraft.core.stub.StubModelCatalog
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -78,6 +81,18 @@ private class FakeInstaller(private val catalog: () -> StubModelCatalog) : Model
     }
 }
 
+private class FakeSettingsStore(var stored: Settings = Settings()) : SettingsStore {
+    var saveOutcome: Outcome<Unit> = Outcome.Success(Unit)
+    val saves = ArrayList<Settings>()
+
+    override suspend fun load(): Settings = stored
+
+    override suspend fun save(settings: Settings): Outcome<Unit> {
+        saves.add(settings)
+        return saveOutcome
+    }
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class AppControllerTest {
     private val picker = FakePicker()
@@ -85,8 +100,9 @@ class AppControllerTest {
     private val saver = FakeSaver()
     private var catalog = StubModelCatalog()
     private val installer = FakeInstaller { catalog }
+    private val settingsStore = FakeSettingsStore()
 
-    private fun TestScope.controller() = AppController(this, engine, picker, saver, catalog, installer)
+    private fun TestScope.controller() = AppController(this, engine, picker, saver, catalog, installer, settingsStore)
 
     private fun TestScope.controllerWithImage(): AppController {
         val controller = controller()
@@ -263,6 +279,49 @@ class AppControllerTest {
             assertEquals(Language.Hebrew, state.language)
             assertEquals(Language.Hebrew, state.settings.defaultLanguage)
             assertEquals(ThemeMode.Dark, state.settings.theme)
+        }
+
+    @Test
+    fun storedSettingsAreAppliedAtStartAndPreselectTheLanguage() =
+        runTest {
+            settingsStore.stored = Settings(ThemeMode.Dark, Language.Hebrew)
+            val controller = controller()
+
+            advanceUntilIdle()
+
+            val state = controller.state.value
+            assertEquals(ThemeMode.Dark, state.settings.theme)
+            assertEquals(Language.Hebrew, state.settings.defaultLanguage)
+            assertEquals(Language.Hebrew, state.language)
+            assertEquals(0, settingsStore.saves.size)
+        }
+
+    @Test
+    fun everyChangeIsSavedAndALaterOneWinsOverTheLoad() =
+        runTest {
+            settingsStore.stored = Settings(ThemeMode.Light, Language.German)
+            val controller = controller()
+
+            controller.setTheme(ThemeMode.Dark)
+            controller.setDefaultLanguage(Language.Russian)
+            advanceUntilIdle()
+
+            val expected = Settings(ThemeMode.Dark, Language.Russian)
+            assertEquals(expected, controller.state.value.settings)
+            assertEquals(listOf(expected, expected), settingsStore.saves)
+        }
+
+    @Test
+    fun aFailedSaveIsShownAndTheChangeStaysForThisRun() =
+        runTest {
+            settingsStore.saveOutcome = Outcome.Failure("disk full")
+            val controller = controller()
+
+            controller.setTheme(ThemeMode.Dark)
+            advanceUntilIdle()
+
+            assertEquals(ThemeMode.Dark, controller.state.value.settings.theme)
+            assertEquals(Notice("disk full", isError = true), controller.state.value.notice)
         }
 
     @Test
