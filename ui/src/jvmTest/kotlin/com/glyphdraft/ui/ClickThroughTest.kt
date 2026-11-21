@@ -18,11 +18,12 @@ import com.glyphdraft.core.ImageInput
 import com.glyphdraft.core.ImagePicker
 import com.glyphdraft.core.Outcome
 import com.glyphdraft.core.TextSaver
+import com.glyphdraft.core.stub.InMemorySettingsStore
 import com.glyphdraft.core.stub.StubModelCatalog
 import com.glyphdraft.core.stub.StubModelInstaller
 import com.glyphdraft.core.stub.StubOcrEngine
 import com.glyphdraft.ui.state.AppController
-import com.glyphdraft.ui.state.ThemeMode
+import com.glyphdraft.core.ThemeMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -79,7 +80,7 @@ class ClickThroughTest {
     private val clipboard = FakeClipboard()
     private val catalog = StubModelCatalog()
     private val controller =
-        AppController(scope, StubOcrEngine(latencyMillis = 0), picker, saver, catalog, StubModelInstaller(catalog, steps = 2, stepMillis = 0))
+        AppController(scope, StubOcrEngine(latencyMillis = 0), picker, saver, catalog, StubModelInstaller(catalog, steps = 2, stepMillis = 0), InMemorySettingsStore())
 
     private fun ComposeUiTest.showApp(shown: AppController = controller) {
         setContent {
@@ -148,7 +149,7 @@ class ClickThroughTest {
         runComposeUiTest {
             val empty = StubModelCatalog(installed = emptySet())
             val firstUse =
-                AppController(scope, StubOcrEngine(latencyMillis = 0), picker, saver, empty, StubModelInstaller(empty, steps = 2, stepMillis = 0))
+                AppController(scope, StubOcrEngine(latencyMillis = 0), picker, saver, empty, StubModelInstaller(empty, steps = 2, stepMillis = 0), InMemorySettingsStore())
             showApp(firstUse)
 
             click("Choose image…")

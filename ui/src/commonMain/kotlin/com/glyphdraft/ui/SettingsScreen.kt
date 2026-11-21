@@ -15,7 +15,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.glyphdraft.ui.state.AppController
 import com.glyphdraft.ui.state.AppState
-import com.glyphdraft.ui.state.ThemeMode
+import com.glyphdraft.core.ThemeMode
 
 /** Theme, default language, the language models and which engine is in use. Kept in memory until task 8c. */
 @Composable

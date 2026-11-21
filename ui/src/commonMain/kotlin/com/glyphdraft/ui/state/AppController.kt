@@ -9,7 +9,9 @@ import com.glyphdraft.core.ModelPack
 import com.glyphdraft.core.OcrEngine
 import com.glyphdraft.core.Outcome
 import com.glyphdraft.core.RecognitionResult
+import com.glyphdraft.core.SettingsStore
 import com.glyphdraft.core.TextSaver
+import com.glyphdraft.core.ThemeMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +19,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Holds the screen state and runs the user's actions. Not tied to any UI framework or lifecycle library.
@@ -29,13 +33,20 @@ class AppController(
     private val saver: TextSaver,
     catalog: ModelCatalog,
     installer: ModelInstaller,
+    private val settingsStore: SettingsStore,
 ) {
     private val mutableState =
         MutableStateFlow(AppState(packs = catalog.packs, installedPackIds = catalog.installedPackIds.value))
     private val installFlow = InstallFlow(mutableState, catalog, installer)
+    private val saveLock = Mutex()
     private var workJob: Job? = null
+    private var settingsChanged = false
 
     val state: StateFlow<AppState> = mutableState.asStateFlow()
+
+    init {
+        scope.launch { loadSettings() }
+    }
 
     fun pickImage() {
         launchExclusive(Activity.Picking) {
@@ -161,11 +172,38 @@ class AppController(
 
     fun setTheme(theme: ThemeMode) {
         mutableState.update { it.copy(settings = it.settings.copy(theme = theme)) }
+        persistSettings()
     }
 
     /** Also preselects the language on the Home screen, so the change is visible at once. */
     fun setDefaultLanguage(language: Language?) {
         mutableState.update { it.copy(settings = it.settings.copy(defaultLanguage = language), language = language) }
+        persistSettings()
+    }
+
+    /** Applies the stored settings, unless the user has already changed one while they were being read. */
+    private suspend fun loadSettings() {
+        val loaded = settingsStore.load()
+        mutableState.update { current ->
+            if (settingsChanged) {
+                current
+            } else {
+                current.copy(settings = loaded, language = current.language ?: loaded.defaultLanguage)
+            }
+        }
+    }
+
+    /** Saves the current settings after the saves already queued; a failure is shown, the change stays for this run. */
+    private fun persistSettings() {
+        settingsChanged = true
+        scope.launch {
+            saveLock.withLock {
+                val outcome = settingsStore.save(state.value.settings)
+                if (outcome is Outcome.Failure) {
+                    showNotice(outcome.message, isError = true)
+                }
+            }
+        }
     }
 
     private suspend fun read(image: ImageInput) {

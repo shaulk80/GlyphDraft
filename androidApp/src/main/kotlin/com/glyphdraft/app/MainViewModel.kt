@@ -8,11 +8,13 @@ import androidx.lifecycle.viewModelScope
 import com.glyphdraft.core.LoggingOcrEngine
 import com.glyphdraft.core.Outcome
 import com.glyphdraft.core.ResultBridge
+import com.glyphdraft.core.knownLanguages
 import com.glyphdraft.engine.OnDeviceEngine
 import com.glyphdraft.engine.OnnxSelfTest
 import com.glyphdraft.engine.TesseractSelfTest
 import com.glyphdraft.engine.log.FileLog
 import com.glyphdraft.engine.ocr.AndroidImageDecoder
+import com.glyphdraft.engine.settings.FileSettingsStore
 import com.glyphdraft.ui.state.AppController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -42,6 +44,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             saver = AndroidTextSaver(application.contentResolver, saveBridge),
             catalog = engine.catalog,
             installer = engine.installer,
+            settingsStore =
+                FileSettingsStore(
+                    dataDirectory.resolve("settings.properties"),
+                    engine.catalog.knownLanguages().toList(),
+                    fileLog,
+                ),
         )
 
     init {

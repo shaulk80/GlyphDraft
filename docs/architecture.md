@@ -53,6 +53,7 @@ On Android the system pickers answer through callbacks of the activity, which is
 
 - **Desktop (in code):** data folder is `GLYPHDRAFT_DATA_DIR` if set (tests and smoke tests use it), else `%APPDATA%\GlyphDraft` on Windows, `$XDG_DATA_HOME/glyphdraft` or `~/.local/share/glyphdraft` on Linux. Log: `<data>/logs/glyphdraft.log`.
 - **Last folder (desktop file dialogs):** `<data>/last-folder.txt` holds one line, the folder of the last chosen file; the dialogs start there. Not read when the folder no longer exists.
+- **Settings (in code):** `<data>/settings.properties` (both apps): `theme` (System, Light, Dark) and `defaultLanguage` (ISO code, absent = auto-detect). `SettingsStore` is in `core`, `FileSettingsStore` in `engine`; `AppController` loads at start and saves after each change, unknown keys and values are ignored, a failed save is shown as a notice. Written through a `.tmp` file and a move.
 - **Android (in code):** data folder is the app-private `filesDir`; log `logs/glyphdraft.log` (and logcat), models in `models/`. Images and saved text go through the system pickers (no storage permission); the app keeps no copy.
 - **ONNX Runtime natives (desktop, in code):** `<data>/native/` holds `onnxruntime.dll` or `libonnxruntime.so` and the JNI library, copied from the jar on first start (see `CLAUDE.md` for why not the temp folder). On Android the AAR's libraries are loaded from the APK (`arm64-v8a`, `x86_64`).
 - **Models (in code, M2 tasks 4 and 8b):** `<data>/models/<pack folders>` (`ppocrv5/...`, `tessdata/...`), downloaded on first use with progress and a SHA-256 check, a file renamed into place only after the check; never committed or bundled. Offline after the first download. Android gets the `INTERNET` permission for this and nothing else; its data folder is `filesDir`.
@@ -63,5 +64,5 @@ One script, `scripts/build.ps1`, is run by CI and locally: license check, build 
 
 ## Open, to be decided
 
-- M2: model manifest and download design (task 4), the settings model (task 8). Engines are chosen in decision 0005.
+- M2: model manifest and download design (task 4). Engines are chosen in decision 0005.
 - M4, M5: whether handwriting and speech need a larger engine than the first on-device one, and whether that is when the cloud engine arrives.
