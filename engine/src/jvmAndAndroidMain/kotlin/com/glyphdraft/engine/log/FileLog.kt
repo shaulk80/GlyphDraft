@@ -1,4 +1,4 @@
-package com.glyphdraft.desktop
+package com.glyphdraft.engine.log
 
 import com.glyphdraft.core.Outcome
 import java.io.IOException

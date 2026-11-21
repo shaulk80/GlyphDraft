@@ -18,6 +18,24 @@ class PixelImage(val width: Int, val height: Int, val pixels: IntArray) {
         const val MAX_PIXELS = 64L * 1024L * 1024L
 
         const val WHITE = 0xFFFFFF
+
+        private const val OPAQUE = 255
+        private const val WHITE_CHANNEL = 255
+
+        /** Blends an `0xAARRGGBB` pixel with white by its alpha; the result is plain `0xRRGGBB`. */
+        fun onWhite(argb: Int): Int {
+            val alpha = argb ushr 24
+            if (alpha == OPAQUE) {
+                return argb and WHITE
+            }
+
+            val red = blend((argb shr 16) and 0xFF, alpha)
+            val green = blend((argb shr 8) and 0xFF, alpha)
+            val blue = blend(argb and 0xFF, alpha)
+            return (red shl 16) or (green shl 8) or blue
+        }
+
+        private fun blend(channel: Int, alpha: Int): Int = (channel * alpha + WHITE_CHANNEL * (OPAQUE - alpha)) / OPAQUE
     }
 }
 
