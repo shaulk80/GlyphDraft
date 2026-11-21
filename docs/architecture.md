@@ -18,8 +18,8 @@ graph TD
 |---|---|---|---|
 | `core` | jvm, android | `Outcome` result type; `OcrEngine`, `LanguageDetector`, `ModelCatalog`, `ModelInstaller` and domain types (`Language`, `ImageInput`, `RecognitionResult`, `ModelPack`), the `ImagePicker` and `TextSaver` seams, `ResultBridge`, stubs | in code (decision 0006); real implementations come in `engine` |
 | `ui` | jvm, android | Compose Multiplatform screens (Home, Result, Settings), the first-use download dialog and the model list, and `AppController` (state holder, navigation, actions; takes `ModelCatalog` and `ModelInstaller`, and offers the download of a missing pack before recognizing), shared by both apps | in code |
-| `desktopApp` | jvm | entry point, data folder, file log, FileKit file dialogs, jpackage app image for Windows and Linux | in code |
-| `androidApp` | android | `MainActivity`, `MainViewModel` (composition root), system pickers, manifest, signing | in code |
+| `desktopApp` | jvm | entry point, data folder, file log, FileKit file dialogs, window icon, jpackage app image for Windows and Linux; installer metadata (name, description, icons) in `build.gradle.kts` and `icons/` | in code |
+| `androidApp` | android | `MainActivity`, `MainViewModel` (composition root), system pickers, manifest, launcher icon (adaptive vector), release signing from environment variables | in code |
 | `engine` | jvm, android | on-device implementations of the engine interfaces (ONNX Runtime; Tesseract and Leptonica through JavaCPP): `OnnxSelfTest` (tiny model) and `TesseractSelfTest` (library load), both run at app start and logged; `OnnxNativeLibraries` and `JavaCppNativeLibraries` (desktop: native libraries into `<data>/native`); `models/`: `ModelManifest` (pinned URL, SHA-256, size per file), `FileModelCatalog`, `HttpModelInstaller` (decision 0007); `ocr/`: PP-OCRv5 pipeline over `PixelImage` (`ImageDecoder`, `TextDetector`, `TextRecognizer`, `PaddleOcr`, `PaddleModels`; decision 0008), `PaddleReader` (keeps the sessions, picks the recognizer), `TesseractHebrewReader` (Hebrew and the Hebrew probe over JavaCPP Tesseract; decision 0010) and `OnDeviceOcrEngine`, the `OcrEngine` that routes between packs and Hebrew (decision 0009); `language/`: `TextLanguageDetector` (script, then Latin word markers; shared code, no model); `OnDeviceEngine` (the wiring of all of the above: catalog, installer, engine; both apps call it), `AndroidImageDecoder` (BitmapFactory) and `log/FileLog` | in code (M2 tasks 3 to 8b) |
 
 Rules: `core` has no UI or platform API. `ui` and `engine` depend only on `core`, never on each other. The two app modules are the composition roots: they create the engines and pass them to the UI (dotted arrows). Nothing else constructs an engine.
@@ -57,12 +57,13 @@ On Android the system pickers answer through callbacks of the activity, which is
 - **Android (in code):** data folder is the app-private `filesDir`; log `logs/glyphdraft.log` (and logcat), models in `models/`. Images and saved text go through the system pickers (no storage permission); the app keeps no copy.
 - **ONNX Runtime natives (desktop, in code):** `<data>/native/` holds `onnxruntime.dll` or `libonnxruntime.so` and the JNI library, copied from the jar on first start (see `CLAUDE.md` for why not the temp folder). On Android the AAR's libraries are loaded from the APK (`arm64-v8a`, `x86_64`).
 - **Models (in code, M2 tasks 4 and 8b):** `<data>/models/<pack folders>` (`ppocrv5/...`, `tessdata/...`), downloaded on first use with progress and a SHA-256 check, a file renamed into place only after the check; never committed or bundled. Offline after the first download. Android gets the `INTERNET` permission for this and nothing else; its data folder is `filesDir`.
+- **Outside the data folder (desktop, known):** Skiko unpacks about 24 MB into `~/.skiko`; ONNX Runtime makes an empty `onnxruntime-java*` folder in the system temp folder and removes it on a normal exit. The README privacy section lists both.
 
 ## Build and release (summary)
 
-One script, `scripts/build.ps1`, is run by CI and locally: license check, build with warnings as errors, tests, package, checksums, smoke test. Windows zip and Linux tar.gz come from the jpackage app image (built on their own OS); the Android APK from `assembleRelease`. Details: `CLAUDE.md`, `.github/workflows/`.
+One script, `scripts/build.ps1`, is run by CI and locally: license check, build with warnings as errors, tests, package, checksums, smoke test. Windows zip and Linux tar.gz come from the jpackage app image (built on their own OS); the Android APK from `assembleRelease`, signed with the release key on `v*` tags and manual runs (`docs/release-signing.md`), with the debug key otherwise. The icons are drawn by `scripts/icons/GenerateIcons.java` (desktop PNG and ICO) and by hand in `androidApp/src/main/res` (same geometry). Details: `CLAUDE.md`, `.github/workflows/`.
 
 ## Open, to be decided
 
-- M2: model manifest and download design (task 4). Engines are chosen in decision 0005.
+- Moving Skiko's unpacked library into the data folder (not done; see Data section).
 - M4, M5: whether handwriting and speech need a larger engine than the first on-device one, and whether that is when the cloud engine arrives.

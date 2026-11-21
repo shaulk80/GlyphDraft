@@ -64,6 +64,25 @@ compose.desktop {
             targetFormats(TargetFormat.Msi, TargetFormat.Deb)
             packageName = "GlyphDraft"
             packageVersion = providers.gradleProperty("appVersion").get()
+            // What the installer and the app list show (the icons are drawn by scripts/icons/GenerateIcons.java).
+            description = "Reads the text in an image on your device and can translate it. No account, images stay on the device."
+            vendor = "GlyphDraft"
+            copyright = "Copyright 2026 GlyphDraft contributors. Apache License 2.0."
+            licenseFile.set(rootProject.file("LICENSE"))
+            windows {
+                iconFile.set(project.file("icons/glyphdraft.ico"))
+                menuGroup = "GlyphDraft"
+                shortcut = true
+                // Stays the same for every version, so that a newer MSI upgrades the installed one.
+                upgradeUuid = "c79dceb5-f4ec-49b2-aef6-e3dea0f3deff"
+            }
+            linux {
+                iconFile.set(project.file("icons/glyphdraft.png"))
+                packageName = "glyphdraft"
+                appCategory = "Graphics"
+                menuGroup = "Graphics"
+                shortcut = true
+            }
             // Needed by FileKit (JNA, D-Bus) in the jlink runtime; list from :desktopApp:suggestRuntimeModules.
             modules("java.instrument", "jdk.security.auth", "jdk.unsupported")
             // No hsperfdata file in the system temp folder: the app writes only into its data folder.

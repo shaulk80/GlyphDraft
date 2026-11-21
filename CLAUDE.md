@@ -9,11 +9,11 @@ Your global rules in `~/.claude` (language, code quality, tests, commits, review
 ```
 core/        KMP library (jvm + android): Outcome result wrapper; later the engine interfaces (OcrEngine, LanguageDetector, ...). No UI, no platform code.
 ui/          KMP library (jvm + android): Compose Multiplatform screens (App.kt).
-desktopApp/  JVM application (Windows, Linux): main, data folder, file log, jpackage app image.
-androidApp/  Android application: MainActivity, manifest, signing.
+desktopApp/  JVM application (Windows, Linux): main, data folder, file log, jpackage app image, icons (`icons/`).
+androidApp/  Android application: MainActivity, manifest, icon resources, signing.
 engine/      KMP library (jvm + android): on-device implementations of the interfaces (ONNX Runtime; so far only the self-test and the desktop native-library loader); a cloud engine is a later sibling.
 config/      allowed-licenses.json (license allow-list for `checkLicense`)
-scripts/     build.ps1 (the one build script for CI and local) + Common/Checksums/Package/Smoke.ps1, smoke-android.sh
+scripts/     build.ps1 (the one build script for CI and local) + Common/Checksums/Package/Smoke.ps1, smoke-android.sh, icons/GenerateIcons.java
 docs/        status.md, plan.md, brief.md, decisions/
 ```
 
@@ -41,13 +41,13 @@ Version lives only in `gradle.properties` (`appVersion`). Packages land in `dist
 - Tests run on every target OS in CI. Coverage is a warning, never a gate. A flaky check gets one retry in its script (logged) and an issue; fix it before the next milestone.
 - One task per pull request, about 800 changed lines or fewer (tests and generated files not counted).
 - A problem that passes about 60 tool calls with no result: stop, write what was learned to `docs/spikes/<name>.md`, and recommend that the user start a fresh session.
-- Do not write files outside the data folder. Its location: `GLYPHDRAFT_DATA_DIR` if set (smoke tests use this), else the per-OS app data folder. Logs go to `<data>/logs/`, ONNX Runtime natives to `<data>/native/`. Known exceptions: ONNX Runtime makes an empty `onnxruntime-java*` folder in the system temp folder (it removes it on normal exit; a forced kill leaves it); Skiko is still to be checked.
+- Do not write files outside the data folder. Its location: `GLYPHDRAFT_DATA_DIR` if set (smoke tests use this), else the per-OS app data folder. Logs go to `<data>/logs/`, ONNX Runtime natives to `<data>/native/`. Known exceptions: ONNX Runtime makes an empty `onnxruntime-java*` folder in the system temp folder (it removes it on normal exit; a forced kill leaves it); Skiko unpacks into `~/.skiko` (see Gotchas).
 
 ## Git and CI
 
 - `main` is protected: work on a branch, open a pull request, merge when all checks are green. Claude commits, pushes and opens the PR when told; the owner says when to merge.
 - CI (`.github/workflows/ci.yml`): jobs `build-windows` (windows-2022), `build-linux` (ubuntu-24.04, Xvfb smoke test), `build-android` (ubuntu-24.04, emulator smoke test). Each runs `scripts/build.ps1`. Packages are uploaded from `main` and from `v*` tags.
-- Release: `/release <version>`. The owner pushes the `v*` tag and publishes the draft; Claude never does. Releases are unsigned (see decision 0001).
+- Release: `/release <version>`. The owner pushes the `v*` tag and publishes the draft; Claude never does. Windows and Linux packages are unsigned (decision 0001). The Android APK of a `v*` tag or a manual run is signed with the release key from the `ANDROID_*` secrets and the run fails without it (`docs/release-signing.md`, decision 0002); other runs use the debug key. Claude never handles the key.
 
 ## Environment
 
@@ -68,7 +68,7 @@ Version lives only in `gradle.properties` (`appVersion`). Packages land in `dist
 - `desktopApp` swaps the ONNX Runtime jar for a copy trimmed to the build host's OS (`trimOnnxruntime`; 55 MB to 7 MB); the Android APK is limited to `arm64-v8a` and `x86_64`. An engine library that is added later must be checked for both.
 - Maven Central answers `429 Too Many Requests` to CI runners now and then (seen twice on `build-android` on 2026-11-20). `Invoke-Gradle` repeats a run once, with a `RETRY:` line in the log, when its output shows a refused or timed-out download (pattern in `scripts/Common.ps1`); any other failure is final at once. A `RETRY:` line in a green run means the check is still flaky.
 - In PowerShell functions, native program output becomes part of the return value; pipe it to `Out-Host` (see `Invoke-Gradle`), otherwise `-not (f)` is never true and a failed Gradle run goes unnoticed.
-- The JVM and Skiko (Compose's renderer) may write to the temp or cache folder (e.g. `hsperfdata`, extracted native library); check in M0 and list it here, since the app promises to write only to its data folder.
+- Skiko (Compose's renderer) unpacks about 24 MB into `~/.skiko` (checked on Windows 2026-11-21, task 9); the README says so. Moving it into the data folder is not done. The packaged app writes no `hsperfdata`; the empty `onnxruntime-java*` temp folder is the other known exception.
 - The license plugin is applied per module: applied once at the root it fails with "resolution ... without an exclusive lock" under Gradle 9. New licenses go into `config/allowed-licenses.json` only after review.
 - `local.properties` needs forward slashes in `sdk.dir`; backslashes are read as escapes and Gradle fails with "filename ... syntax is incorrect".
 - `gradlew` made on Windows has no executable bit in git; run `git update-index --chmod=+x gradlew` when adding it (the build script also calls it through `sh`).
