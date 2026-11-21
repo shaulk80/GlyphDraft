@@ -1,6 +1,6 @@
 # 0002: Android identity and signing
 
-Date: 2026-11-13. Status: accepted by the owner on 2026-11-13 (applicationId kept; release-key proposal confirmed for v0.1.0, not yet implemented).
+Date: 2026-11-13. Status: accepted by the owner on 2026-11-13 (applicationId kept; release-key proposal confirmed for v0.1.0). Implemented in M2 task 9: `docs/release-signing.md`; the owner generates the key and sets the secrets.
 
 - **applicationId and namespace: `com.glyphdraft.app`.** Chosen without owning a matching domain; it only has to be unique and stable. It cannot change once users have installed the app, and a Play Store listing would fix it for good. Change it now if you prefer another (for example `io.github.<owner>.glyphdraft`).
 - **M0 (v0.0.1): the release APK is signed with the debug key** (`androidApp/build.gradle.kts`), so it installs for testing. It is not a real release key: a debug-keystore APK cannot be updated by an APK signed with a different key.
