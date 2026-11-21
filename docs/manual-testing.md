@@ -79,10 +79,10 @@ Retest of the first round's findings: the dialog should now be the current Windo
 
 | Do | Expect |
 |---|---|
-| Click "Settings" | Theme (System, Light, Dark), Default language, Engine ("Stub …"), version line ("GlyphDraft dev" when started with gradle; the packaged app shows the real version, Android shows it too) |
+| Click "Settings" | Theme (System, Light, Dark), Default language, the language model list, the engine line ("On this device …"), version line ("GlyphDraft dev" when started with gradle; the packaged app shows the real version, Android shows it too) |
 | Choose Dark, then Light | The whole window switches at once; "System" follows Windows |
 | Set Default language to "Hebrew", go Back | Home dropdown shows Hebrew |
-| Restart the app | Settings are back to defaults. This is expected in M1 (they live in memory; persistence comes with M2) |
+| Restart the app | Theme and default language are kept (`<data>/settings.properties`) |
 
 ### 6. Window size
 

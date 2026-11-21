@@ -17,7 +17,7 @@ import com.glyphdraft.ui.state.AppController
 import com.glyphdraft.ui.state.AppState
 import com.glyphdraft.core.ThemeMode
 
-/** Theme, default language, the language models and which engine is in use. Kept in memory until task 8c. */
+/** Theme, default language, the language models and where recognition runs. */
 @Composable
 fun SettingsScreen(state: AppState, controller: AppController, version: String) {
     CenteredColumn {
@@ -39,7 +39,7 @@ fun SettingsScreen(state: AppState, controller: AppController, version: String) 
         ModelPackSection(state, controller)
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("Engine", style = MaterialTheme.typography.titleMedium)
-            Text("Stub (returns fixed text; real recognition arrives in the next milestone)")
+            Text("On this device. Images are never uploaded; only the language models are downloaded, once.")
         }
         Text("GlyphDraft $version", style = MaterialTheme.typography.bodySmall)
     }
