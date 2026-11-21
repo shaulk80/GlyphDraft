@@ -4,14 +4,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import com.glyphdraft.core.LoggingOcrEngine
 import com.glyphdraft.core.Outcome
-import com.glyphdraft.core.stub.StubModelCatalog
-import com.glyphdraft.core.stub.StubModelInstaller
-import com.glyphdraft.core.stub.StubOcrEngine
 import com.glyphdraft.engine.JavaCppNativeLibraries
+import com.glyphdraft.engine.OnDeviceEngine
 import com.glyphdraft.engine.OnnxNativeLibraries
 import com.glyphdraft.engine.OnnxSelfTest
 import com.glyphdraft.engine.TesseractSelfTest
+import com.glyphdraft.engine.log.FileLog
+import com.glyphdraft.engine.ocr.AwtImageDecoder
 import com.glyphdraft.ui.App
 import com.glyphdraft.ui.state.AppController
 import kotlinx.coroutines.CoroutineScope
@@ -30,23 +31,30 @@ fun main() {
     if (logged is Outcome.Failure) {
         System.err.println(logged.message)
     }
-    runEngineSelfTest(dataDirectory, log)
+    prepareNativeLibraries(dataDirectory, log)
+    runEngineSelfTest(log)
 
+    // The models are opened on first use, so building the engine costs nothing at start.
+    val engine = OnDeviceEngine(dataDirectory.resolve("models"), AwtImageDecoder())
     application {
-        Window(onCloseRequest = ::exitApplication, title = "GlyphDraft") {
+        Window(
+            onCloseRequest = {
+                engine.close()
+                exitApplication()
+            },
+            title = "GlyphDraft",
+        ) {
             val scope = rememberCoroutineScope()
             val controller =
                 remember {
                     val chooser = FileKitFileChooser(window, LastFolder(dataDirectory.resolve("last-folder.txt"), log), log)
-                    // Stub models until task 8b: nothing is installed, so the first recognition shows the download dialog.
-                    val catalog = StubModelCatalog(installed = emptySet())
                     AppController(
                         scope,
-                        StubOcrEngine(),
+                        LoggingOcrEngine(engine.engine) { message, cause -> logRecognition(log, message, cause) },
                         DesktopImagePicker(chooser, log),
                         DesktopTextSaver(chooser, log),
-                        catalog,
-                        StubModelInstaller(catalog),
+                        engine.catalog,
+                        engine.installer,
                     )
                 }
             App(controller, version)
@@ -54,23 +62,36 @@ fun main() {
     }
 }
 
-/** Loads ONNX Runtime and Tesseract in the background and logs the results; the smoke test of the package looks for them. */
-private fun runEngineSelfTest(dataDirectory: Path, log: FileLog) {
-    CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
-        // Before the first use of ONNX Runtime, so that it loads from the data folder and not from the temp folder.
-        val libraries = OnnxNativeLibraries.prepare(dataDirectory.resolve("native"))
-        if (libraries is Outcome.Failure) {
-            log.info("ONNX Runtime stays in the temp folder: ${libraries.message}")
-        }
+private fun logRecognition(log: FileLog, message: String, cause: Throwable?) {
+    if (cause == null) {
+        log.info(message)
+    } else {
+        log.error(message, cause)
+    }
+}
 
+/**
+ * Points ONNX Runtime and JavaCPP at the data folder. Both must be done before the first use of the library, which is
+ * why the engine is built after this.
+ */
+private fun prepareNativeLibraries(dataDirectory: Path, log: FileLog) {
+    val libraries = OnnxNativeLibraries.prepare(dataDirectory.resolve("native"))
+    if (libraries is Outcome.Failure) {
+        log.info("ONNX Runtime stays in the temp folder: ${libraries.message}")
+    }
+
+    val cache = JavaCppNativeLibraries.prepare(dataDirectory.resolve("native").resolve("javacpp"))
+    if (cache is Outcome.Failure) {
+        log.info("JavaCPP stays in its default cache folder: ${cache.message}")
+    }
+}
+
+/** Loads ONNX Runtime and Tesseract in the background and logs the results; the smoke test of the package looks for them. */
+private fun runEngineSelfTest(log: FileLog) {
+    CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
         when (val outcome = OnnxSelfTest.run()) {
             is Outcome.Success -> log.info(outcome.value)
             is Outcome.Failure -> log.info("engine self-test failed: ${outcome.message}")
-        }
-
-        val cache = JavaCppNativeLibraries.prepare(dataDirectory.resolve("native").resolve("javacpp"))
-        if (cache is Outcome.Failure) {
-            log.info("JavaCPP stays in its default cache folder: ${cache.message}")
         }
 
         when (val outcome = TesseractSelfTest.run()) {

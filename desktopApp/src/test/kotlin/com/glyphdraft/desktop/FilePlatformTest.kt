@@ -2,6 +2,7 @@ package com.glyphdraft.desktop
 
 import com.glyphdraft.core.ImageInput
 import com.glyphdraft.core.Outcome
+import com.glyphdraft.engine.log.FileLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import java.nio.file.Files

@@ -3,6 +3,7 @@ package com.glyphdraft.desktop
 import com.glyphdraft.core.ImageInput
 import com.glyphdraft.core.ImagePicker
 import com.glyphdraft.core.Outcome
+import com.glyphdraft.engine.log.FileLog
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
