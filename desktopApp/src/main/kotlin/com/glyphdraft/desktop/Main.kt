@@ -38,6 +38,7 @@ fun main() {
 
     // The models are opened on first use, so building the engine costs nothing at start.
     val engine = OnDeviceEngine(dataDirectory.resolve("models"), AwtImageDecoder())
+    val icon = loadWindowIcon(log)
     application {
         Window(
             onCloseRequest = {
@@ -45,6 +46,7 @@ fun main() {
                 exitApplication()
             },
             title = "GlyphDraft",
+            icon = icon,
         ) {
             val scope = rememberCoroutineScope()
             val controller =
