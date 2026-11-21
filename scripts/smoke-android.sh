@@ -16,7 +16,11 @@ sleep 8
 
 if ! adb shell pidof "$APP_ID" > /dev/null; then
   echo "App process is not running"
-  adb logcat -d | tail -n 80
+  # The tail of the full log is emulator noise; show the crash buffer and what concerns the app.
+  echo "--- crash buffer"
+  adb logcat -d -b crash | tail -n 60
+  echo "--- lines about the app"
+  adb logcat -d | grep -i "glyphdraft\|AndroidRuntime\|FATAL\|am_crash\|am_proc_died\|Process: $APP_ID\|libc *: Fatal\|DEBUG *:" | tail -n 60
   exit 1
 fi
 
