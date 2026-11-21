@@ -1,6 +1,7 @@
 package com.glyphdraft.desktop
 
 import com.glyphdraft.core.Outcome
+import com.glyphdraft.engine.log.FileLog
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.dialogs.FileKitDialogException

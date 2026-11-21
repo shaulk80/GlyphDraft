@@ -43,7 +43,7 @@ internal object TestModels {
 
     fun expectedText(name: String): String = File(fixtures, "$name.txt").readText(Charsets.UTF_8)
 
-    private fun modelsFolder(): Path {
+    fun modelsFolder(): Path {
         val configured = System.getenv(FOLDER_VARIABLE)
         if (!configured.isNullOrBlank()) {
             return File(configured).toPath()

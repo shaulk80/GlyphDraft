@@ -1,6 +1,7 @@
 package com.glyphdraft.desktop
 
 import com.glyphdraft.core.Outcome
+import com.glyphdraft.engine.log.FileLog
 import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.test.Test
