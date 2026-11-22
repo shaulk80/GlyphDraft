@@ -40,8 +40,11 @@ class FixtureHebrewTest {
             problems.add("he-clean: probe $confidence is below ${OnDeviceOcrEngine.HEBREW_PROBE_THRESHOLD}")
         }
 
-        val rate = Cer.of(TestModels.expectedText("he-clean"), text.orEmpty())
+        val expected = TestModels.expectedText("he-clean")
+        val rate = Cer.of(expected, text.orEmpty())
         assertEquals(0.0, rate, 0.0, "he-clean was read as: $text")
+        // The error rate ignores whitespace; the line breaks are checked here (Tesseract once added an empty line).
+        assertEquals(expected.trim().lines(), text.orEmpty().lines(), "he-clean lines")
         return problems
     }
 

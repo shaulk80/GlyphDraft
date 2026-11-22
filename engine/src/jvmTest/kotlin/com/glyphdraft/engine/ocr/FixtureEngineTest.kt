@@ -130,6 +130,11 @@ class FixtureEngineTest {
             problems.add("$label: marked as low quality")
         }
 
+        // The error rate ignores whitespace, so the line breaks are compared on their own: one text line per line, no empty ones.
+        if (result.text.lines().any { it.isBlank() }) {
+            problems.add("$label: the text has an empty line: ${result.text.replace("\n", "<LF>")}")
+        }
+
         if (result.detected != (hint == null)) {
             problems.add("$label: detected flag is ${result.detected}")
         }

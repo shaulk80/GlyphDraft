@@ -80,7 +80,7 @@ class TesseractHebrewReader(private val catalog: FileModelCatalog) : HebrewReade
             val text = readText(tesseractApi)
             val confidence = tesseractApi.MeanTextConf() / PERCENT
             tesseractApi.Clear()
-            return Outcome.Success(PageRead(image, text.trim(), confidence))
+            return Outcome.Success(PageRead(image, text.withoutBlankLines(), confidence))
         } catch (e: UnsatisfiedLinkError) {
             return Outcome.Failure("Tesseract native library could not be loaded: ${e.message}", e)
         } catch (e: NoClassDefFoundError) {
@@ -131,6 +131,17 @@ class TesseractHebrewReader(private val catalog: FileModelCatalog) : HebrewReade
         const val SOURCE_DPI = 300
     }
 }
+
+/**
+ * One text line per line break, as the PP-OCRv5 readers give it. Tesseract ends every paragraph with an empty line and
+ * may split a page into paragraphs where the image has none (the three lines of the Hebrew fixture came back with an
+ * empty line after the second), so empty lines are dropped; the page's own paragraph gaps are lost with them.
+ */
+internal fun String.withoutBlankLines(): String =
+    lines()
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .joinToString("\n")
 
 /** The pixels as bytes R, G, B per pixel, row by row: the layout `TessBaseAPI.SetImage` takes with 3 bytes per pixel. */
 internal fun PixelImage.toRgbBytes(): ByteArray {
