@@ -4,10 +4,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -15,6 +16,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.unit.dp
 import com.glyphdraft.core.RecognitionResult
@@ -49,9 +52,7 @@ private fun ResultContent(result: RecognitionResult, state: AppState, controller
         shape = MaterialTheme.shapes.medium,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        SelectionContainer {
-            Text(result.text, modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyLarge)
-        }
+        ResultText(result.text, Modifier.padding(16.dp))
     }
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Button(onClick = {
@@ -62,6 +63,23 @@ private fun ResultContent(result: RecognitionResult, state: AppState, controller
         }) { Text("Copy") }
         OutlinedButton(onClick = controller::saveResult, enabled = !state.busy) { Text("Save as…") }
     }
+}
+
+/**
+ * The text, selectable with the mouse or the keyboard. A read-only text field rather than a `SelectionContainer`: it
+ * takes the standard shortcuts of a text field (Ctrl+C and Ctrl+Insert to copy, Ctrl+A to select all), where the
+ * container copies on Ctrl+C only (hand test, finding 2).
+ */
+@Composable
+private fun ResultText(text: String, modifier: Modifier = Modifier) {
+    BasicTextField(
+        value = text,
+        onValueChange = {},
+        readOnly = true,
+        textStyle = MaterialTheme.typography.bodyLarge.copy(color = LocalContentColor.current),
+        cursorBrush = SolidColor(Color.Transparent),
+        modifier = modifier.fillMaxWidth(),
+    )
 }
 
 /** Warns that the text below is probably wrong and says what to try; the text stays visible and can still be copied. */
