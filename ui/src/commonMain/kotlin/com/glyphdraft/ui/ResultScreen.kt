@@ -19,6 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import com.glyphdraft.core.RecognitionResult
 import com.glyphdraft.ui.state.AppController
@@ -68,7 +70,8 @@ private fun ResultContent(result: RecognitionResult, state: AppState, controller
 /**
  * The text, selectable with the mouse or the keyboard. A read-only text field rather than a `SelectionContainer`: it
  * takes the standard shortcuts of a text field (Ctrl+C and Ctrl+Insert to copy, Ctrl+A to select all), where the
- * container copies on Ctrl+C only (hand test, finding 2).
+ * container copies on Ctrl+C only (hand test, finding 2). The direction of each paragraph follows its first strong
+ * character, so Hebrew reads right to left, sits at the right edge and keeps its full stop at the left end (finding 14).
  */
 @Composable
 private fun ResultText(text: String, modifier: Modifier = Modifier) {
@@ -76,7 +79,11 @@ private fun ResultText(text: String, modifier: Modifier = Modifier) {
         value = text,
         onValueChange = {},
         readOnly = true,
-        textStyle = MaterialTheme.typography.bodyLarge.copy(color = LocalContentColor.current),
+        textStyle = MaterialTheme.typography.bodyLarge.copy(
+            color = LocalContentColor.current,
+            textAlign = TextAlign.Start,
+            textDirection = TextDirection.Content,
+        ),
         cursorBrush = SolidColor(Color.Transparent),
         modifier = modifier.fillMaxWidth(),
     )
