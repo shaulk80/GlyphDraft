@@ -11,8 +11,8 @@ enum class Screen { Home, Result, Settings }
 
 /**
  * What the app is busy with. Only one thing at a time: a second request while busy is ignored. [Cancelling] is the short
- * time between "Cancel" and the engine returning from the native step it cannot interrupt; the progress indicator is
- * gone by then, but nothing new may start yet.
+ * time between "Cancel" and the engine returning from the native step it cannot interrupt. The screen is already free
+ * then (not [AppState.busy]); the [AppController] makes whatever starts next wait for the engine.
  */
 enum class Activity { Idle, Picking, Installing, Recognizing, Cancelling, Saving }
 
@@ -64,7 +64,7 @@ data class AppState(
         return "${language.displayName} (download needed)"
     }
 
-    val busy: Boolean get() = activity != Activity.Idle
+    val busy: Boolean get() = activity != Activity.Idle && activity != Activity.Cancelling
 
     val canRecognize: Boolean get() = image != null && !busy && installPrompt == null
 
@@ -72,7 +72,6 @@ data class AppState(
     val handlesBack: Boolean
         get() =
             activity == Activity.Recognizing ||
-                activity == Activity.Cancelling ||
                 activity == Activity.Installing ||
                 installPrompt != null ||
                 backStack.size > 1

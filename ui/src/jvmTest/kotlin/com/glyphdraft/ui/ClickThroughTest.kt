@@ -15,7 +15,6 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runComposeUiTest
@@ -259,10 +258,9 @@ class ClickThroughTest {
             }
         }
 
-    /** Hand test, finding 14: Hebrew was laid out left to right, so it sat at the left edge with the full stop on the right. */
-    /** Hand test finding 9: after Cancel the progress indicator stayed until the engine left its native step. */
+    /** Hand test finding 9: after Cancel the progress indicator stayed, and then every button was off, until the engine left its native step. */
     @Test
-    fun cancelHidesTheProgressAtOnceAndRecognizeComesBackWhenTheEngineStops() =
+    fun cancelFreesTheScreenAtOnceWhileTheEngineIsStillStopping() =
         runComposeUiTest {
             val engine = StuckEngine()
             val reading = AppController(scope, engine, picker, saver, catalog, StubModelInstaller(catalog, steps = 2, stepMillis = 0), InMemorySettingsStore())
@@ -273,14 +271,18 @@ class ClickThroughTest {
             waitForText("Cancel")
 
             click("Cancel")
-            waitUntil(timeoutMillis = WAIT_MILLIS) { onAllNodes(hasText("Cancel")).fetchSemanticsNodes().isEmpty() }
-            onNodeWithText("Recognize text").assertIsNotEnabled()
+            try {
+                waitUntil(timeoutMillis = WAIT_MILLIS) { onAllNodes(hasText("Cancel")).fetchSemanticsNodes().isEmpty() }
+                onNodeWithText("Recognize text").assertIsEnabled()
+                onNodeWithText("Choose another image…").assertIsEnabled()
+            } finally {
+                engine.release()
+            }
 
-            engine.release()
-            waitUntil(timeoutMillis = WAIT_MILLIS) { onAllNodes(hasText("Recognize text") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
             onNodeWithText("never shown").assertDoesNotExist()
         }
 
+    /** Hand test, finding 14: Hebrew was laid out left to right, so it sat at the left edge with the full stop on the right. */
     @Test
     fun hebrewResultTextIsLaidOutRightToLeftAndAlignedRight() = checkResultTextLayout("שלום עולם.\nשלום.", ResolvedTextDirection.Rtl)
 
