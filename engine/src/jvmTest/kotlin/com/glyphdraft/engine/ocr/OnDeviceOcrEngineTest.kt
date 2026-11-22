@@ -155,6 +155,21 @@ class OnDeviceOcrEngineTest {
         }
 
     @Test
+    fun aConfidentHebrewProbeWithoutHebrewTextFallsBackToThePaddlePacks() =
+        runTest {
+            // Seen on an English photo: Tesseract read nothing and still reported 0.95.
+            for (text in listOf("", "  ", ", .", "Hello world")) {
+                val hebrew = FakeHebrewReader(Outcome.Success(0.95f), text)
+                val s = setup(allPacks, latinWins("The end of all"), hebrew = hebrew)
+
+                val result = success(s.engine.recognize(input, null))
+
+                assertEquals(1, hebrew.reads, "reads for '$text'")
+                assertEquals(Language.English, result.language, "language for '$text'")
+            }
+        }
+
+    @Test
     fun aFailedHebrewProbeFallsBackToThePaddlePacks() =
         runTest {
             val hebrew = FakeHebrewReader(Outcome.Failure("Tesseract failed."))
