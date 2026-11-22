@@ -9,9 +9,8 @@ M0 and M1 are done (PRs #1, #4); `v0.0.1` is a pre-release. M2 (OCR with languag
 ## Next
 
 - Merged fixes from the hand test: auto-detect failing with Hebrew installed (#23), a card when a reading looks wrong (#24, `decisions/0011`), the Hebrew blank line (#26), Ctrl+Insert copy (#27), the Skiko note for Linux (finding 13). Findings 1, 9 and 12 are issues #28, #29 and #30.
-- Repeat on desktop passed (C9, D2 to D4, E3). New finding 14 (2026-11-22): Hebrew result laid out left to right; fix on branch `fix/result-rtl-alignment`, tests green, not yet in a pull request.
-- Android selection, copy and no keyboard on tap passed (owner, 2026-11-22).
-- The owner: repeat C6 after that fix; run the release dry run for 0.1.0 and repeat A3, H4, I1, I2 on it; then `/release 0.1.0`.
+- The repeat run passed on desktop and Android (C6 to E3, Android copy), including the Hebrew direction fix (finding 14, #32); see `docs/manual/m2.md`.
+- Release 0.1.0 is in progress: version and notes in the release pull request; then the release dry run (`release.yml` on `main`), the owner repeats A3, H4, I1, I2 on its packages, the owner pushes the tag `v0.1.0` and publishes the draft.
 
 ## Open
 
