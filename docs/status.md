@@ -4,13 +4,12 @@ Updated: 2026-11-22. Keep this file under 3 KB. History belongs in git, pull req
 
 ## Now
 
-M0 and M1 are done (PRs #1, #4); `v0.0.1` is a pre-release. M2 (OCR with language detection, first real release v0.1.0; `docs/plan.md`) has tasks 1 to 9 merged: on-device engine (PP-OCRv5 on ONNX Runtime, Hebrew through Tesseract), model download on first use, offline use, settings file, icon, signed Android APK. Task 10 is the owner's hand test (`docs/manual/m2.md`, run 2026-11-22: sections A to J passed, 13 findings). CI builds, tests, packages and smoke-tests on Windows, Linux and Android; `main` and release tags are protected.
+M0, M1 and M2 are done. `v0.1.0` (text from an image: PP-OCRv5 on ONNX Runtime, Hebrew through Tesseract, models downloaded on first use) was published on 2026-11-22 as a pre-release, after the hand test (`docs/manual/m2.md`: 14 findings, all fixed or filed). CI builds, tests, packages and smoke-tests on Windows, Linux and Android; `main` and release tags are protected.
 
 ## Next
 
-- Merged fixes from the hand test: auto-detect failing with Hebrew installed (#23), a card when a reading looks wrong (#24, `decisions/0011`), the Hebrew blank line (#26), Ctrl+Insert copy (#27), the Skiko note for Linux (finding 13). Findings 1, 9 and 12 are issues #28, #29 and #30.
-- The repeat run passed on desktop and Android (C6 to E3, Android copy), including the Hebrew direction fix (finding 14, #32); see `docs/manual/m2.md`.
-- Release 0.1.0 is in progress: version and notes in the release pull request; then the release dry run (`release.yml` on `main`), the owner repeats A3, H4, I1, I2 on its packages, the owner pushes the tag `v0.1.0` and publishes the draft.
+- Open issues from the hand test: #28 (Android open dialog forgets its folder), #29 (0.5 s lag after Cancel), #30 (Linux window icon).
+- Next milestone: M3, translation (`docs/plan.md`). Plan it first; the owner decides the order of M3 and the open issues.
 
 ## Open
 
