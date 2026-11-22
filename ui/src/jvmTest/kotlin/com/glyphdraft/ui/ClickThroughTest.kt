@@ -18,7 +18,10 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runComposeUiTest
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.style.ResolvedTextDirection
 import com.glyphdraft.core.ImageInput
 import com.glyphdraft.core.ImagePicker
 import com.glyphdraft.core.Language
@@ -234,6 +237,38 @@ class ClickThroughTest {
                 assertEquals("Hello world", clipboard.text(), "Ctrl+${copyKey}")
             }
         }
+
+    /** Hand test, finding 14: Hebrew was laid out left to right, so it sat at the left edge with the full stop on the right. */
+    @Test
+    fun hebrewResultTextIsLaidOutRightToLeftAndAlignedRight() = checkResultTextLayout("שלום עולם.\nשלום.", ResolvedTextDirection.Rtl)
+
+    @Test
+    fun englishResultTextIsLaidOutLeftToRightAndAlignedLeft() = checkResultTextLayout("Hello world.\nHello.", ResolvedTextDirection.Ltr)
+
+    private fun checkResultTextLayout(text: String, direction: ResolvedTextDirection) =
+        runComposeUiTest {
+            val engine = FixedEngine(RecognitionResult(text, Language.English, detected = true))
+            val reading = AppController(scope, engine, picker, saver, catalog, StubModelInstaller(catalog, steps = 2, stepMillis = 0), InMemorySettingsStore())
+            showApp(reading)
+            click("Choose image…")
+            waitForText("scan.png (3 bytes)")
+            click("Recognize text")
+            waitForText("Language: English (detected)")
+
+            val layout = resultTextLayout(text)
+            for (line in 0 until layout.lineCount) {
+                assertEquals(direction, layout.getParagraphDirection(layout.getLineStart(line)), "line $line of $text")
+            }
+            val atRightEdge = layout.getLineRight(0) >= layout.size.width - 1f
+            assertEquals(direction == ResolvedTextDirection.Rtl, atRightEdge, "first line of $text at the right edge")
+        }
+
+    private fun ComposeUiTest.resultTextLayout(text: String): TextLayoutResult {
+        val layouts = mutableListOf<TextLayoutResult>()
+        val node = onNodeWithText(text).fetchSemanticsNode()
+        node.config[SemanticsActions.GetTextLayoutResult].action?.invoke(layouts)
+        return layouts.first()
+    }
 
     @Test
     fun pickerErrorIsShownAndCanBeDismissed() =
