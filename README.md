@@ -42,6 +42,10 @@ Download the package for your system from the [Releases page](https://github.com
 
 Windows and Linux packages are not signed. Windows SmartScreen will warn ("More info", then "Run anyway").
 
+## Known issues
+
+- **Android: the sort order of the file dialog is not kept.** "Choose image" opens the system file browser, which keeps the last folder but not the sort order you picked; that setting belongs to the system and the app cannot change it.
+
 ## Build
 
 Needs JDK 21 and, for Android, the Android SDK (Android Studio installs it). Then:
