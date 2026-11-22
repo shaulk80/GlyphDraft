@@ -60,9 +60,9 @@ class OnDeviceOcrEngine(
             return Outcome.Failure("The ${language.displayName} models are not installed.")
         }
 
-        return when (val text = readWithPack(page, pack)) {
-            is Outcome.Failure -> text
-            is Outcome.Success -> Outcome.Success(RecognitionResult(text.value, language, detected = false))
+        return when (val read = readWithPack(page, pack)) {
+            is Outcome.Failure -> read
+            is Outcome.Success -> Outcome.Success(RecognitionResult(read.value.text, language, detected = false, lowQuality = read.value.lowQuality))
         }
     }
 
@@ -113,7 +113,8 @@ class OnDeviceOcrEngine(
             return null
         }
 
-        return nonBlank(text) { Outcome.Success(RecognitionResult(it, Language.Hebrew, detected = true)) }
+        val lowQuality = ReadQuality.isLowHebrewReading(confidence)
+        return nonBlank(text) { Outcome.Success(RecognitionResult(it, Language.Hebrew, detected = true, lowQuality = lowQuality)) }
     }
 
     private suspend fun readBestPack(page: PixelImage, packs: List<ModelPack>): Outcome<RecognitionResult> {
@@ -133,13 +134,16 @@ class OnDeviceOcrEngine(
                 is Outcome.Success -> packs.first { it.id == chosen.value }
             }
 
-        return when (val text = readRows(page, rows, best)) {
-            is Outcome.Failure -> text
-            is Outcome.Success -> Outcome.Success(RecognitionResult(text.value, languageOf(text.value, best, packs), detected = true))
+        return when (val read = readRows(page, rows, best)) {
+            is Outcome.Failure -> read
+            is Outcome.Success -> {
+                val language = languageOf(read.value.text, best, packs)
+                Outcome.Success(RecognitionResult(read.value.text, language, detected = true, lowQuality = read.value.lowQuality))
+            }
         }
     }
 
-    private suspend fun readWithPack(page: PixelImage, pack: ModelPack): Outcome<String> {
+    private suspend fun readWithPack(page: PixelImage, pack: ModelPack): Outcome<TextRead> {
         if (pack.id == ModelManifest.HEBREW) {
             return readHebrew(page)
         }
@@ -153,19 +157,31 @@ class OnDeviceOcrEngine(
         return readRows(page, rows, pack)
     }
 
-    private suspend fun readRows(page: PixelImage, rows: List<List<TextBox>>, pack: ModelPack): Outcome<String> =
+    private suspend fun readRows(page: PixelImage, rows: List<List<TextBox>>, pack: ModelPack): Outcome<TextRead> =
         when (val read = paddle.read(page, rows, pack.id)) {
             is Outcome.Failure -> read
-            is Outcome.Success -> nonBlank(read.value.text) { Outcome.Success(it) }
+            is Outcome.Success -> {
+                val lowQuality = ReadQuality.isLowPaddleReading(rows.flatten(), read.value.text)
+                nonBlank(read.value.text) { Outcome.Success(TextRead(it, lowQuality)) }
+            }
         }
 
-    private suspend fun readHebrew(page: PixelImage): Outcome<String> {
+    private suspend fun readHebrew(page: PixelImage): Outcome<TextRead> {
         val reader = hebrew ?: return Outcome.Failure(HEBREW_UNAVAILABLE)
-        return when (val text = reader.read(page)) {
-            is Outcome.Failure -> text
-            is Outcome.Success -> nonBlank(text.value) { Outcome.Success(it) }
-        }
+        val text =
+            when (val read = reader.read(page)) {
+                is Outcome.Failure -> return read
+                is Outcome.Success -> read.value
+            }
+
+        // The reader keeps the last page, so this costs no second recognition. A failed probe is no reason to doubt the text.
+        val confidence = (reader.probe(page) as? Outcome.Success)?.value
+        val lowQuality = confidence != null && ReadQuality.isLowHebrewReading(confidence)
+        return nonBlank(text) { Outcome.Success(TextRead(it, lowQuality)) }
     }
+
+    /** The text of one reading and whether the engine doubts it ([RecognitionResult.lowQuality]). */
+    private class TextRead(val text: String, val lowQuality: Boolean)
 
     /**
      * The language of [text] among the languages of all [installed] packs, not only of the pack that read it: the
