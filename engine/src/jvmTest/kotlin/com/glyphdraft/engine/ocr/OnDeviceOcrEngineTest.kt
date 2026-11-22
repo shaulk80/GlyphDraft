@@ -10,6 +10,7 @@ import com.glyphdraft.engine.models.ModelManifest
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
@@ -54,8 +55,26 @@ class OnDeviceOcrEngineTest {
 
             val result = success(s.engine.recognize(input, Language.Russian))
 
-            assertEquals(RecognitionResult("Привет\nПривет\nПривет", Language.Russian, detected = false), result)
+            // The fake lines are short for their boxes, so the quality flag is not part of this check (see the low-quality tests).
+            assertEquals("Привет\nПривет\nПривет", result.text)
+            assertEquals(Language.Russian, result.language)
+            assertFalse(result.detected)
             assertEquals(listOf(ModelManifest.ESLAV), s.source.opened)
+        }
+
+    @Test
+    fun aReadingWithFarLessTextThanTheBoxesHoldIsLowQuality() =
+        runTest {
+            val sentence = "The committee will meet on Thursday at ten o'clock"
+            // The boxes hold 30 line heights; 3 x 50 characters is 5 per line height, 3 x 5 is 0.5.
+            val cases = listOf(sentence to false, "Hello" to true)
+
+            for ((text, expectedLow) in cases) {
+                val s = setup(setOf(ModelManifest.LATIN), mapOf(ModelManifest.LATIN to FakeRecognizer(text, 0.9f)))
+
+                assertEquals(expectedLow, success(s.engine.recognize(input, Language.English)).lowQuality, "chosen: $text")
+                assertEquals(expectedLow, success(s.engine.recognize(input, null)).lowQuality, "detected: $text")
+            }
         }
 
     @Test
@@ -192,15 +211,18 @@ class OnDeviceOcrEngineTest {
         }
 
     @Test
-    fun hebrewWithAHintGoesStraightToTheHebrewReader() =
+    fun hebrewWithAHintGoesStraightToTheHebrewReaderAndLowConfidenceIsLowQuality() =
         runTest {
-            val hebrew = FakeHebrewReader(Outcome.Success(0.0f))
-            val s = setup(allPacks, emptyMap(), hebrew = hebrew)
+            // The probe is only asked after the read, for the confidence of that page (the real reader has it cached).
+            val cases = listOf(0.92f to false, 0.6f to false, 0.59f to true, 0.3f to true)
 
-            val result = success(s.engine.recognize(input, Language.Hebrew))
+            for ((confidence, expectedLow) in cases) {
+                val s = setup(allPacks, emptyMap(), hebrew = FakeHebrewReader(Outcome.Success(confidence)))
 
-            assertEquals(RecognitionResult("שלום עולם", Language.Hebrew, detected = false), result)
-            assertEquals(0, hebrew.probes)
+                val result = success(s.engine.recognize(input, Language.Hebrew))
+
+                assertEquals(RecognitionResult("שלום עולם", Language.Hebrew, detected = false, lowQuality = expectedLow), result, "confidence $confidence")
+            }
         }
 
     @Test

@@ -2,7 +2,9 @@ package com.glyphdraft.engine.ocr
 
 import com.glyphdraft.core.ImageInput
 import com.glyphdraft.core.Language
+import com.glyphdraft.core.ModelCatalog
 import com.glyphdraft.core.Outcome
+import com.glyphdraft.core.stub.StubModelCatalog
 import com.glyphdraft.engine.language.TextLanguageDetector
 import com.glyphdraft.engine.models.ModelManifest
 import java.io.File
@@ -53,6 +55,56 @@ class FixtureEngineTest {
         assertTrue(problems.isEmpty(), problems.joinToString("\n"))
     }
 
+    /**
+     * The mistakes of the M2 hand test (docs/manual/m2.md, findings 5, 6 and 8): a page whose models are missing or a
+     * language that does not fit the page. Every one of them has to come back marked as low quality; right readings
+     * (above) and a different but readable language (English text read with the Russian models) must not.
+     */
+    @Test
+    fun aWrongPackOrLanguageIsMarkedLowQuality() {
+        val catalog = TestModels.catalogWith("FixtureEngineTest", setOf(ModelManifest.LATIN, ModelManifest.ESLAV, ModelManifest.CJK, ModelManifest.HEBREW))
+        if (catalog == null) {
+            return
+        }
+
+        // The models are all on disk, but the engine is told that only the Latin pack is installed.
+        val latinOnly = StubModelCatalog(installed = setOf(ModelManifest.LATIN))
+        // fixture, language chosen (null: auto-detect), expected low quality, installed packs: everything or Latin only
+        val cases =
+            listOf(
+                Wrong("ru-clean", null, expectLow = true, latinOnly = true),
+                Wrong("ru-noise", null, expectLow = true, latinOnly = true),
+                Wrong("zh-clean", null, expectLow = true, latinOnly = true),
+                Wrong("ja-clean", null, expectLow = true, latinOnly = true),
+                Wrong("ru-clean", Language.Hebrew, expectLow = true),
+                Wrong("en-clean", Language.Hebrew, expectLow = true),
+                Wrong("he-clean", Language.English, expectLow = true),
+                Wrong("mixed-clean", Language.English, expectLow = true),
+                Wrong("ru-clean", Language.English, expectLow = true),
+                Wrong("en-clean", Language.Russian, expectLow = false),
+                Wrong("de-clean", Language.English, expectLow = false),
+            )
+
+        val problems = ArrayList<String>()
+        for (case in cases) {
+            val installed: ModelCatalog = if (case.latinOnly) latinOnly else catalog
+            val paddle = PaddleReader(PaddleModels(catalog))
+            OnDeviceOcrEngine(AwtImageDecoder(), installed, paddle, TextLanguageDetector(), TesseractHebrewReader(catalog)).use { engine ->
+                val image = ImageInput("${case.name}.png", File(TestModels.fixtures, "${case.name}.png").readBytes())
+                val outcome = runBlocking { engine.recognize(image, case.language) }
+                val label = "${case.name} (${case.language?.code ?: "auto"}${if (case.latinOnly) ", Latin only" else ""})"
+                println("$label: $outcome")
+                if (outcome is Outcome.Success && outcome.value.lowQuality != case.expectLow) {
+                    problems.add("$label: lowQuality is ${outcome.value.lowQuality}, expected ${case.expectLow}")
+                }
+            }
+        }
+
+        assertTrue(problems.isEmpty(), problems.joinToString("\n"))
+    }
+
+    private class Wrong(val name: String, val language: Language?, val expectLow: Boolean, val latinOnly: Boolean = false)
+
     private fun check(engine: OnDeviceOcrEngine, case: Case, hint: Language?): List<String> {
         val label = "${case.name} (${hint?.code ?: "no language"})"
         val image = ImageInput("${case.name}.png", File(TestModels.fixtures, "${case.name}.png").readBytes())
@@ -72,6 +124,10 @@ class FixtureEngineTest {
         val problems = ArrayList<String>()
         if (result.language != case.language) {
             problems.add("$label: language ${result.language.code}, expected ${case.language.code}")
+        }
+
+        if (result.lowQuality) {
+            problems.add("$label: marked as low quality")
         }
 
         if (result.detected != (hint == null)) {

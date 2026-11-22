@@ -16,7 +16,10 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runComposeUiTest
 import com.glyphdraft.core.ImageInput
 import com.glyphdraft.core.ImagePicker
+import com.glyphdraft.core.Language
+import com.glyphdraft.core.OcrEngine
 import com.glyphdraft.core.Outcome
+import com.glyphdraft.core.RecognitionResult
 import com.glyphdraft.core.TextSaver
 import com.glyphdraft.core.stub.InMemorySettingsStore
 import com.glyphdraft.core.stub.StubModelCatalog
@@ -48,6 +51,10 @@ private class FakeSaver : TextSaver {
         savedText = text
         return Outcome.Success(true)
     }
+}
+
+private class FixedEngine(var result: RecognitionResult) : OcrEngine {
+    override suspend fun recognize(image: ImageInput, languageHint: Language?): Outcome<RecognitionResult> = Outcome.Success(result)
 }
 
 /** In-memory clipboard so the test never touches the system clipboard (there may be no display on CI). */
@@ -175,6 +182,28 @@ class ClickThroughTest {
             click("Settings")
             waitForText("Language models")
             waitForText("Download 2.0 MB")
+        }
+
+    @Test
+    fun aDoubtedReadingShowsTheHintAboveTheTextAndAGoodOneDoesNot() =
+        runComposeUiTest {
+            val engine = FixedEngine(RecognitionResult(", . 4", Language.English, detected = true, lowQuality = true))
+            val doubting = AppController(scope, engine, picker, saver, catalog, StubModelInstaller(catalog, steps = 2, stepMillis = 0), InMemorySettingsStore())
+            showApp(doubting)
+
+            click("Choose image…")
+            waitForText("scan.png (3 bytes)")
+            click("Recognize text")
+            waitForText("Language: English (detected)")
+            onNodeWithText(LOW_QUALITY_HINT).assertExists()
+            onNodeWithText(", . 4").assertExists()
+            onNodeWithText("Copy").assertIsEnabled()
+
+            click("← Back")
+            engine.result = RecognitionResult("Hello world", Language.English, detected = true)
+            click("Recognize text")
+            waitForText("Hello world")
+            onNodeWithText(LOW_QUALITY_HINT).assertDoesNotExist()
         }
 
     @Test

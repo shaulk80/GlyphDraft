@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -39,6 +41,9 @@ private fun ResultContent(result: RecognitionResult, state: AppState, controller
     val scope = rememberCoroutineScope()
 
     Text(languageLine(result), style = MaterialTheme.typography.titleMedium)
+    if (result.lowQuality) {
+        LowQualityHint()
+    }
     Surface(
         tonalElevation = 2.dp,
         shape = MaterialTheme.shapes.medium,
@@ -58,6 +63,18 @@ private fun ResultContent(result: RecognitionResult, state: AppState, controller
         OutlinedButton(onClick = controller::saveResult, enabled = !state.busy) { Text("Save as…") }
     }
 }
+
+/** Warns that the text below is probably wrong and says what to try; the text stays visible and can still be copied. */
+@Composable
+private fun LowQualityHint() {
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer), modifier = Modifier.fillMaxWidth()) {
+        Text(LOW_QUALITY_HINT, modifier = Modifier.padding(16.dp))
+    }
+}
+
+internal const val LOW_QUALITY_HINT =
+    "This text looks wrong. The language models for this image may not be installed, or another language was chosen. " +
+        "Install the models in Settings or choose the language of the image, then read it again."
 
 private fun languageLine(result: RecognitionResult): String {
     val how = if (result.detected) "detected" else "chosen"

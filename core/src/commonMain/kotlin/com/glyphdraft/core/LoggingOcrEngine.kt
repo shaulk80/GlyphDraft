@@ -20,7 +20,7 @@ class LoggingOcrEngine(
         when (outcome) {
             is Outcome.Success -> {
                 val result = outcome.value
-                log("Recognized $request: ${result.language.code}, detected=${result.detected}, ${result.text.length} characters, $millis ms", null)
+                log("Recognized $request: ${result.language.code}, detected=${result.detected}, ${result.text.length} characters, lowQuality=${result.lowQuality}, $millis ms", null)
             }
             is Outcome.Failure -> log("Recognition of $request failed after $millis ms: ${outcome.message}", outcome.cause)
         }
