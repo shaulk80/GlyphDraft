@@ -2,7 +2,7 @@
 
 Steps for the owner to click through the app. Automated tests cover the logic and a scripted desktop click-through of the screens with fake pickers (`.\gradlew jvmTest :desktopApp:test testAndroidHostTest`); this file covers what only a person can judge: the real file dialogs, the look and feel, the layout at different sizes.
 
-Status of this file: written during M1, updated after task 6 (Android pickers). Update the "Known gaps" lists as tasks land.
+Status of this file: written during M1, updated after task 6 (Android pickers). The M2 checklist (real recognition, download, offline, release package) is `docs/manual/m2.md`. Update the "Known gaps" lists as tasks land.
 
 While reviewing, write down every change you want (wording, layout, flow, missing screen). M1 is done when each one is done or filed as a GitHub issue.
 
@@ -95,8 +95,7 @@ Retest of the first round's findings: the dialog should now be the current Windo
 ### Known gaps (desktop)
 
 - No image preview, only file name and size.
-- Nothing is remembered between runs.
-- Fixed sample text: the stub engine ignores the picture.
+- Sections 3 and 4 above were written for the stub engine (fixed sample text, 0.8 s). With the real engine use the M2 checklist, `docs/manual/m2.md`.
 
 ## Android
 
@@ -131,7 +130,7 @@ $sdk = "C:\Users\Admin\AppData\Local\Android\Sdk"
 
 - Not tried on a real device yet; the emulator is API 37.
 - State is lost when Android kills the app process in the background (only rotation is handled).
-- Settings reset on restart, as on desktop.
+- Theme and default language are kept (since M2); the real checks are in `docs/manual/m2.md`.
 
 ## When something looks wrong
 
