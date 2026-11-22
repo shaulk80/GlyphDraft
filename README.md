@@ -2,7 +2,7 @@
 
 AI-powered media translator: give it an image, get the text in it, in another language if you want. Runs on-device. For Windows, Linux and Android.
 
-**Status: version 0.1 in preparation.** Text from an image works (printed text, language detected if you do not give it). Translation and the other inputs are still to come; see [docs/status.md](docs/status.md) and [docs/plan.md](docs/plan.md).
+**Status: version 0.1.0.** Text from an image works (printed text, language detected if you do not give it). Translation and the other inputs are still to come; see [docs/status.md](docs/status.md) and [docs/plan.md](docs/plan.md).
 
 ## What it does today
 
