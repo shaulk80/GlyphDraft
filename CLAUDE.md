@@ -41,7 +41,7 @@ Version lives only in `gradle.properties` (`appVersion`). Packages land in `dist
 - Tests run on every target OS in CI. Coverage is a warning, never a gate. A flaky check gets one retry in its script (logged) and an issue; fix it before the next milestone.
 - One task per pull request, about 800 changed lines or fewer (tests and generated files not counted).
 - A problem that passes about 60 tool calls with no result: stop, write what was learned to `docs/spikes/<name>.md`, and recommend that the user start a fresh session.
-- Do not write files outside the data folder. Its location: `GLYPHDRAFT_DATA_DIR` if set (smoke tests use this), else the per-OS app data folder. Logs go to `<data>/logs/`, ONNX Runtime natives to `<data>/native/`. Known exceptions: ONNX Runtime makes an empty `onnxruntime-java*` folder in the system temp folder (it removes it on normal exit; a forced kill leaves it); Skiko unpacks into `~/.skiko` (see Gotchas).
+- Do not write files outside the data folder. Its location: `GLYPHDRAFT_DATA_DIR` if set (smoke tests use this), else the per-OS app data folder. Logs go to `<data>/logs/`, ONNX Runtime natives to `<data>/native/`. Known exceptions: ONNX Runtime makes an empty `onnxruntime-java*` folder in the system temp folder (it removes it on normal exit; a forced kill leaves it); on Windows Skiko unpacks into `~/.skiko` (see Gotchas).
 
 ## Git and CI
 
@@ -68,7 +68,7 @@ Version lives only in `gradle.properties` (`appVersion`). Packages land in `dist
 - `desktopApp` swaps the ONNX Runtime jar for a copy trimmed to the build host's OS (`trimOnnxruntime`; 55 MB to 7 MB); the Android APK is limited to `arm64-v8a` and `x86_64`. An engine library that is added later must be checked for both.
 - Maven Central answers `429 Too Many Requests` to CI runners now and then (seen twice on `build-android` on 2026-11-20). `Invoke-Gradle` repeats a run once, with a `RETRY:` line in the log, when its output shows a refused or timed-out download (pattern in `scripts/Common.ps1`); any other failure is final at once. A `RETRY:` line in a green run means the check is still flaky.
 - In PowerShell functions, native program output becomes part of the return value; pipe it to `Out-Host` (see `Invoke-Gradle`), otherwise `-not (f)` is never true and a failed Gradle run goes unnoticed.
-- Skiko (Compose's renderer) unpacks about 24 MB into `~/.skiko` (checked on Windows 2026-11-21, task 9); the README says so. Moving it into the data folder is not done. The packaged app writes no `hsperfdata`; the empty `onnxruntime-java*` temp folder is the other known exception.
+- Skiko (Compose's renderer) unpacks about 24 MB into `~/.skiko` on Windows (checked 2026-11-21, task 9); the README says so. The Linux package, run in WSL on 2026-11-22, did not create `~/.skiko` (where Skiko keeps its library there is not looked into). Moving it into the data folder is not done. The packaged app writes no `hsperfdata`; the empty `onnxruntime-java*` temp folder is the other known exception.
 - The license plugin is applied per module: applied once at the root it fails with "resolution ... without an exclusive lock" under Gradle 9. New licenses go into `config/allowed-licenses.json` only after review.
 - `local.properties` needs forward slashes in `sdk.dir`; backslashes are read as escapes and Gradle fails with "filename ... syntax is incorrect".
 - `gradlew` made on Windows has no executable bit in git; run `git update-index --chmod=+x gradlew` when adding it (the build script also calls it through `sh`).

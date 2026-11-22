@@ -57,7 +57,7 @@ On Android the system pickers answer through callbacks of the activity, which is
 - **Android (in code):** data folder is the app-private `filesDir`; log `logs/glyphdraft.log` (and logcat), models in `models/`. Images and saved text go through the system pickers (no storage permission); the app keeps no copy.
 - **ONNX Runtime natives (desktop, in code):** `<data>/native/` holds `onnxruntime.dll` or `libonnxruntime.so` and the JNI library, copied from the jar on first start (see `CLAUDE.md` for why not the temp folder). On Android the AAR's libraries are loaded from the APK (`arm64-v8a`, `x86_64`).
 - **Models (in code, M2 tasks 4 and 8b):** `<data>/models/<pack folders>` (`ppocrv5/...`, `tessdata/...`), downloaded on first use with progress and a SHA-256 check, a file renamed into place only after the check; never committed or bundled. Offline after the first download. Android gets the `INTERNET` permission for this and nothing else; its data folder is `filesDir`.
-- **Outside the data folder (desktop, known):** Skiko unpacks about 24 MB into `~/.skiko`; ONNX Runtime makes an empty `onnxruntime-java*` folder in the system temp folder and removes it on a normal exit. The README privacy section lists both.
+- **Outside the data folder (desktop, known):** on Windows Skiko unpacks about 24 MB into `~/.skiko` (the Linux package did not create it in a WSL check, 2026-11-22); ONNX Runtime makes an empty `onnxruntime-java*` folder in the system temp folder and removes it on a normal exit. The README privacy section lists both.
 
 ## Build and release (summary)
 
