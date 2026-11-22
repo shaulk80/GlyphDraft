@@ -19,14 +19,16 @@ class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
 
     // Must be registered before the activity is started; the results go to the view model bridges.
+    // OpenDocument, not GetContent: it opens the system file browser, which keeps the last folder and sort order (like the
+    // save dialog); GetContent opens the "Open from" chooser, which always starts at Recent (hand test, finding 1).
     private val pickImage =
-        registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? -> viewModel.imageBridge.deliver(uri) }
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? -> viewModel.imageBridge.deliver(uri) }
     private val createDocument =
         registerForActivityResult(ActivityResultContracts.CreateDocument(TEXT_MIME_TYPE)) { uri: Uri? -> viewModel.saveBridge.deliver(uri) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        viewModel.imageBridge.launcher = { mimeType -> launchSafely("image picker") { pickImage.launch(mimeType) } }
+        viewModel.imageBridge.launcher = { mimeType -> launchSafely("image picker") { pickImage.launch(arrayOf(mimeType)) } }
         viewModel.saveBridge.launcher = { name -> launchSafely("file saver") { createDocument.launch(name) } }
         setContent {
             val controller = viewModel.controller
