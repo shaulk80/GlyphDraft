@@ -40,6 +40,12 @@ class AppController(
     private val installFlow = InstallFlow(mutableState, catalog, installer)
     private val saveLock = Mutex()
     private var workJob: Job? = null
+
+    /** Ends when every cancelled job has really ended; the next job waits for it before it starts its work. */
+    private var stopping: Job? = null
+
+    /** Number of the latest job; a job that was overtaken (cancelled, then replaced) must not reset the activity. */
+    private var generation = 0
     private var settingsChanged = false
 
     val state: StateFlow<AppState> = mutableState.asStateFlow()
@@ -114,12 +120,14 @@ class AppController(
     }
 
     /**
-     * Cancels a running download or recognition. A recognition is shown as cancelled at once ([Activity.Cancelling]);
-     * the engine needs a moment to leave its current native step, and the job returns to Idle when it has.
+     * Cancels a running download or recognition. A recognition is shown as cancelled and the screen is free at once
+     * ([Activity.Cancelling]); the engine needs a moment to leave its current native step, and whatever starts next waits
+     * for it ([stopping]), so two reads never run side by side.
      */
     fun cancelRecognition() {
         val activity = state.value.activity
         if (activity == Activity.Recognizing) {
+            stopping = stoppedAfter(stopping, workJob)
             mutableState.update { it.copy(activity = Activity.Cancelling) }
         }
 
@@ -127,6 +135,13 @@ class AppController(
             workJob?.cancel()
         }
     }
+
+    /** A job that ends when [earlier] and [cancelled] have both ended. */
+    private fun stoppedAfter(earlier: Job?, cancelled: Job?): Job =
+        scope.launch {
+            earlier?.join()
+            cancelled?.join()
+        }
 
     fun saveResult() {
         val result = state.value.result
@@ -254,18 +269,26 @@ class AppController(
         mutableState.update { it.copy(notice = Notice(text, isError)) }
     }
 
-    /** Starts [block] unless something is already running; always returns to Idle, also on cancellation. */
+    /**
+     * Starts [block] unless something is already running, after any cancelled job has really ended; returns to Idle when
+     * it ends, also on cancellation, unless a newer job has taken over.
+     */
     private fun launchExclusive(activity: Activity, block: suspend () -> Unit): Job? {
         if (state.value.busy) {
             return null
         }
 
+        val waitFor = stopping
+        val mine = ++generation
         mutableState.update { it.copy(activity = activity, notice = null) }
         return scope.launch {
             try {
+                waitFor?.join()
                 block()
             } finally {
-                mutableState.update { it.copy(activity = Activity.Idle) }
+                if (generation == mine) {
+                    mutableState.update { it.copy(activity = Activity.Idle) }
+                }
             }
         }
     }

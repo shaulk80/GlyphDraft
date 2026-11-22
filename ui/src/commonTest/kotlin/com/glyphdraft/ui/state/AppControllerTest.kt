@@ -270,17 +270,47 @@ class AppControllerTest {
             controller.cancelRecognition()
             runCurrent()
 
-            assertEquals(Activity.Cancelling, controller.state.value.activity)
-            assertEquals(true, controller.state.value.busy)
-            assertEquals(false, controller.state.value.canRecognize)
-            assertEquals(true, controller.state.value.handlesBack)
+            try {
+                assertEquals(Activity.Cancelling, controller.state.value.activity)
+                assertEquals(false, controller.state.value.busy)
+                assertEquals(true, controller.state.value.canRecognize)
+            } finally {
+                engine.gate?.complete(Unit)
+            }
 
-            engine.gate?.complete(Unit)
             advanceUntilIdle()
 
             assertEquals(Activity.Idle, controller.state.value.activity)
             assertNull(controller.state.value.result)
             assertEquals(true, controller.state.value.canRecognize)
+        }
+
+    /** After Cancel the screen is free at once; a new read waits for the engine to leave its step, never runs beside it. */
+    @Test
+    fun readingAgainAfterCancelWaitsForTheEngineAndThenReads() =
+        runTest {
+            val controller = controllerWithImage()
+            engine.gate = CompletableDeferred()
+            engine.uncancellable = true
+
+            controller.recognize()
+            runCurrent()
+            controller.cancelRecognition()
+            controller.recognize()
+            runCurrent()
+
+            try {
+                assertEquals(Activity.Recognizing, controller.state.value.activity)
+                assertEquals(1, engine.calls)
+            } finally {
+                engine.gate?.complete(Unit)
+            }
+
+            advanceUntilIdle()
+
+            assertEquals(2, engine.calls)
+            assertEquals(Activity.Idle, controller.state.value.activity)
+            assertEquals(sample, controller.state.value.result)
         }
 
     @Test
