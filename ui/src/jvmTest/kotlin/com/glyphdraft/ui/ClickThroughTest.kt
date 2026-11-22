@@ -2,6 +2,10 @@ package com.glyphdraft.ui
 
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.performTextInputSelection
+import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.LocalClipboard
@@ -14,6 +18,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runComposeUiTest
+import androidx.compose.ui.text.TextRange
 import com.glyphdraft.core.ImageInput
 import com.glyphdraft.core.ImagePicker
 import com.glyphdraft.core.Language
@@ -204,6 +209,30 @@ class ClickThroughTest {
             click("Recognize text")
             waitForText("Hello world")
             onNodeWithText(LOW_QUALITY_HINT).assertDoesNotExist()
+        }
+
+    @Test
+    fun selectedResultTextCopiesWithCtrlCAndCtrlInsert() =
+        runComposeUiTest {
+            val engine = FixedEngine(RecognitionResult("Hello world", Language.English, detected = true))
+            val reading = AppController(scope, engine, picker, saver, catalog, StubModelInstaller(catalog, steps = 2, stepMillis = 0), InMemorySettingsStore())
+            showApp(reading)
+            click("Choose image…")
+            waitForText("scan.png (3 bytes)")
+            click("Recognize text")
+            waitForText("Hello world")
+
+            for (copyKey in listOf(Key.C, Key.Insert)) {
+                clipboard.entry = null
+                onNodeWithText("Hello world").performTextInputSelection(TextRange(0, "Hello world".length))
+                onNodeWithText("Hello world").performKeyInput {
+                    keyDown(Key.CtrlLeft)
+                    pressKey(copyKey)
+                    keyUp(Key.CtrlLeft)
+                }
+                waitUntil(timeoutMillis = WAIT_MILLIS) { clipboard.entry != null }
+                assertEquals("Hello world", clipboard.text(), "Ctrl+${copyKey}")
+            }
         }
 
     @Test
