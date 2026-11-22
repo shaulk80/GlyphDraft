@@ -9,8 +9,12 @@ import com.glyphdraft.core.Settings
 
 enum class Screen { Home, Result, Settings }
 
-/** What the app is busy with. Only one thing at a time: a second request while busy is ignored. */
-enum class Activity { Idle, Picking, Installing, Recognizing, Saving }
+/**
+ * What the app is busy with. Only one thing at a time: a second request while busy is ignored. [Cancelling] is the short
+ * time between "Cancel" and the engine returning from the native step it cannot interrupt; the progress indicator is
+ * gone by then, but nothing new may start yet.
+ */
+enum class Activity { Idle, Picking, Installing, Recognizing, Cancelling, Saving }
 
 /**
  * The dialog that offers to download [pack], then shows the download. [thenRecognize] continues with the recognition
@@ -65,5 +69,11 @@ data class AppState(
     val canRecognize: Boolean get() = image != null && !busy && installPrompt == null
 
     /** True when the system Back key has something to do: cancel a running download or recognition, close a dialog, or go back a screen. */
-    val handlesBack: Boolean get() = activity == Activity.Recognizing || activity == Activity.Installing || installPrompt != null || backStack.size > 1
+    val handlesBack: Boolean
+        get() =
+            activity == Activity.Recognizing ||
+                activity == Activity.Cancelling ||
+                activity == Activity.Installing ||
+                installPrompt != null ||
+                backStack.size > 1
 }

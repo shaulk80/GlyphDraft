@@ -113,9 +113,17 @@ class AppController(
         }
     }
 
-    /** Cancels a running download or recognition. */
+    /**
+     * Cancels a running download or recognition. A recognition is shown as cancelled at once ([Activity.Cancelling]);
+     * the engine needs a moment to leave its current native step, and the job returns to Idle when it has.
+     */
     fun cancelRecognition() {
-        if (state.value.activity == Activity.Recognizing || state.value.activity == Activity.Installing) {
+        val activity = state.value.activity
+        if (activity == Activity.Recognizing) {
+            mutableState.update { it.copy(activity = Activity.Cancelling) }
+        }
+
+        if (activity == Activity.Recognizing || activity == Activity.Installing) {
             workJob?.cancel()
         }
     }

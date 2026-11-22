@@ -15,6 +15,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.v2.runComposeUiTest
@@ -35,9 +36,14 @@ import com.glyphdraft.core.stub.StubModelInstaller
 import com.glyphdraft.core.stub.StubOcrEngine
 import com.glyphdraft.ui.state.AppController
 import com.glyphdraft.core.ThemeMode
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.coroutineContext
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 import kotlin.test.Test
@@ -63,6 +69,21 @@ private class FakeSaver : TextSaver {
 
 private class FixedEngine(var result: RecognitionResult) : OcrEngine {
     override suspend fun recognize(image: ImageInput, languageHint: Language?): Outcome<RecognitionResult> = Outcome.Success(result)
+}
+
+/** Stays in a step that cannot be interrupted, like a native call, until [release] is called. */
+private class StuckEngine : OcrEngine {
+    private val release = CompletableDeferred<Unit>()
+
+    fun release() {
+        release.complete(Unit)
+    }
+
+    override suspend fun recognize(image: ImageInput, languageHint: Language?): Outcome<RecognitionResult> {
+        withContext(NonCancellable) { release.await() }
+        coroutineContext.ensureActive()
+        return Outcome.Success(RecognitionResult("never shown", Language.English, detected = true))
+    }
 }
 
 /** In-memory clipboard so the test never touches the system clipboard (there may be no display on CI). */
@@ -239,6 +260,27 @@ class ClickThroughTest {
         }
 
     /** Hand test, finding 14: Hebrew was laid out left to right, so it sat at the left edge with the full stop on the right. */
+    /** Hand test finding 9: after Cancel the progress indicator stayed until the engine left its native step. */
+    @Test
+    fun cancelHidesTheProgressAtOnceAndRecognizeComesBackWhenTheEngineStops() =
+        runComposeUiTest {
+            val engine = StuckEngine()
+            val reading = AppController(scope, engine, picker, saver, catalog, StubModelInstaller(catalog, steps = 2, stepMillis = 0), InMemorySettingsStore())
+            showApp(reading)
+            click("Choose image…")
+            waitForText("scan.png (3 bytes)")
+            click("Recognize text")
+            waitForText("Cancel")
+
+            click("Cancel")
+            waitUntil(timeoutMillis = WAIT_MILLIS) { onAllNodes(hasText("Cancel")).fetchSemanticsNodes().isEmpty() }
+            onNodeWithText("Recognize text").assertIsNotEnabled()
+
+            engine.release()
+            waitUntil(timeoutMillis = WAIT_MILLIS) { onAllNodes(hasText("Recognize text") and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
+            onNodeWithText("never shown").assertDoesNotExist()
+        }
+
     @Test
     fun hebrewResultTextIsLaidOutRightToLeftAndAlignedRight() = checkResultTextLayout("שלום עולם.\nשלום.", ResolvedTextDirection.Rtl)
 
