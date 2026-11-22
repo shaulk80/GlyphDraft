@@ -8,7 +8,7 @@ M0, M1 and M2 are done. `v0.1.0` (text from an image: PP-OCRv5 on ONNX Runtime, 
 
 ## Next
 
-- Open issues from the hand test: #28 (Android open dialog forgets its folder), #29 (0.5 s lag after Cancel), #30 (Linux window icon).
+- Issues from the hand test: #28 (Android open dialog; fixed in #35, the owner checks folder and sort order), #29 (0.5 s lag after Cancel; fix in a pull request, the owner checks D9), #30 (Linux window icon; parked until seen on a native Linux desktop).
 - Next milestone: M3, translation (`docs/plan.md`). Plan it first; the owner decides the order of M3 and the open issues.
 
 ## Open

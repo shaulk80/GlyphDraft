@@ -16,10 +16,14 @@ import com.glyphdraft.core.ThemeMode
 import com.glyphdraft.core.stub.StubModelCatalog
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.coroutineContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -43,10 +47,18 @@ private class FakeEngine(var outcome: Outcome<RecognitionResult> = Outcome.Succe
     var lastHint: Language? = null
     var calls = 0
 
+    /** When set, waiting on [gate] cannot be interrupted, like a native call; cancellation shows once it returns. */
+    var uncancellable = false
+
     override suspend fun recognize(image: ImageInput, languageHint: Language?): Outcome<RecognitionResult> {
         calls++
         lastHint = languageHint
-        gate?.await()
+        if (uncancellable) {
+            withContext(NonCancellable) { gate?.await() }
+            coroutineContext.ensureActive()
+        } else {
+            gate?.await()
+        }
         return outcome
     }
 }
@@ -243,6 +255,32 @@ class AppControllerTest {
             controller.back()
             controller.back()
             assertEquals(listOf(Screen.Home), controller.state.value.backStack)
+        }
+
+    /** Hand test finding 9: the progress indicator stayed until the engine's current native step returned. */
+    @Test
+    fun cancelShowsAtOnceWhileTheEngineIsStillFinishingItsStep() =
+        runTest {
+            val controller = controllerWithImage()
+            engine.gate = CompletableDeferred()
+            engine.uncancellable = true
+
+            controller.recognize()
+            runCurrent()
+            controller.cancelRecognition()
+            runCurrent()
+
+            assertEquals(Activity.Cancelling, controller.state.value.activity)
+            assertEquals(true, controller.state.value.busy)
+            assertEquals(false, controller.state.value.canRecognize)
+            assertEquals(true, controller.state.value.handlesBack)
+
+            engine.gate?.complete(Unit)
+            advanceUntilIdle()
+
+            assertEquals(Activity.Idle, controller.state.value.activity)
+            assertNull(controller.state.value.result)
+            assertEquals(true, controller.state.value.canRecognize)
         }
 
     @Test
