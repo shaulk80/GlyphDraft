@@ -8,6 +8,7 @@ import com.glyphdraft.core.ModelPack
 import com.glyphdraft.core.OcrEngine
 import com.glyphdraft.core.Outcome
 import com.glyphdraft.core.RecognitionResult
+import com.glyphdraft.core.Script
 import com.glyphdraft.core.installedPacks
 import com.glyphdraft.engine.language.TextScripts
 import com.glyphdraft.engine.models.ModelManifest
@@ -20,7 +21,7 @@ import kotlinx.coroutines.withContext
  * - With a language: the installed pack that serves it reads the image (Hebrew through [hebrew], the rest through
  *   [paddle]).
  * - Without: if Hebrew is installed, [HebrewReader.probe] runs first and a confidence of [HEBREW_PROBE_THRESHOLD] or
- *   more means Hebrew. Otherwise the text is detected once, every installed PP-OCRv5 pack reads the two longest lines
+ *   more, with a text that is written in Hebrew, means Hebrew. Otherwise the text is detected once, every installed PP-OCRv5 pack reads the two longest lines
  *   ([PaddleReader.chooseBest]) and the best reads the whole page. The language is then told from the text by
  *   [languageDetector], among all installed languages.
  *
@@ -100,10 +101,19 @@ class OnDeviceOcrEngine(
             return null
         }
 
-        return when (val text = reader.read(page)) {
-            is Outcome.Failure -> text
-            is Outcome.Success -> nonBlank(text.value) { Outcome.Success(RecognitionResult(it, Language.Hebrew, detected = true)) }
+        val text =
+            when (val read = reader.read(page)) {
+                is Outcome.Failure -> return read
+                is Outcome.Success -> read.value
+            }
+
+        // Tesseract is also confident about a page it read nothing of (0.95 on an English photo, where it found no
+        // text at all), so the confidence alone does not make a page Hebrew: the text has to be written in Hebrew.
+        if (!onlyChoice && TextScripts.profile(text).dominant != Script.HEBREW) {
+            return null
         }
+
+        return nonBlank(text) { Outcome.Success(RecognitionResult(it, Language.Hebrew, detected = true)) }
     }
 
     private suspend fun readBestPack(page: PixelImage, packs: List<ModelPack>): Outcome<RecognitionResult> {

@@ -12,6 +12,8 @@ M0 and M1 are done and merged (PRs #1, #4). `v0.0.1` is a pre-release (unsigned,
 - Tasks 7 (Hebrew, `decisions/0010`; all 11 fixtures at 0.0 % CER with real models) and 8a to 8c (download dialog and pickers; real engine in both composition roots; settings in `<data>/settings.properties`) are merged. CI runs the fixture tests with the real models on Windows and Linux; the owner's hand test in task 10 covers Android and the emulator (not yet clicked through on desktop or emulator).
 - Task 9 (branch `m2/task-9-release-basics`): app icon (desktop window, exe, MSI/deb; Android adaptive), installer metadata, README with privacy statement, Android signing from env variables with a CI key step and signature check. **Owner step before v0.1.0:** generate the release keystore and set the four `ANDROID_*` secrets (`docs/release-signing.md`), then run the release dry run. Skiko unpacks 24 MB into `~/.skiko` (listed in README and CLAUDE.md).
 
+- Hand test (task 10) found that auto-detect failed with "no text found" on a clean English photo when Hebrew was installed: the Hebrew probe reported 0.95 confidence for a page it read nothing of. Fixed: a probe counts only if the text is Hebrew (PR `fix/hebrew-probe-blank-text`). Other findings are in `docs/manual/m2.md` (kept on the task-10 branch).
+
 ## Open
 
 - Trademark search (USPTO, TMview, WIPO) for "GlyphDraft" not done; do it before any public launch.
