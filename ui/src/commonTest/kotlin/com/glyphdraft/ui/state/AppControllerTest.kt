@@ -13,6 +13,7 @@ import com.glyphdraft.core.Settings
 import com.glyphdraft.core.SettingsStore
 import com.glyphdraft.core.TextSaver
 import com.glyphdraft.core.ThemeMode
+import com.glyphdraft.core.TranslationDirection
 import com.glyphdraft.core.stub.StubModelCatalog
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -432,6 +433,22 @@ class AppControllerTest {
                 assertEquals(offered, controller.state.value.installPrompt?.pack?.id, "language $language, installed $installedPacks")
                 assertEquals(if (offered == null) 1 else 0, engine.calls, "language $language, installed $installedPacks")
             }
+        }
+
+    @Test
+    fun anInstalledTranslationModelDoesNotCountAsAnInstalledReadingModel() =
+        runTest {
+            val translation =
+                ModelPack("mt-en-de", "English to German", emptySet(), 100, TranslationDirection(Language.English, Language.German))
+            catalog = StubModelCatalog(StubModelCatalog.defaultPacks() + translation, installed = setOf(translation.id))
+            val controller = controllerWithImage()
+            controller.selectLanguage(null)
+
+            controller.recognize()
+            advanceUntilIdle()
+
+            assertEquals("latin", controller.state.value.installPrompt?.pack?.id)
+            assertEquals(0, engine.calls)
         }
 
     @Test
