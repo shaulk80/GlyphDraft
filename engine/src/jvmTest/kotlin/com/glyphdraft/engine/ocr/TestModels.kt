@@ -4,13 +4,15 @@ import com.glyphdraft.core.Outcome
 import com.glyphdraft.engine.models.FileModelCatalog
 import com.glyphdraft.engine.models.HttpModelInstaller
 import com.glyphdraft.engine.models.ModelManifest
+import com.glyphdraft.engine.models.PackManifest
+import com.glyphdraft.engine.models.TranslationManifest
 import java.io.File
 import java.nio.file.Path
 import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 
 /**
- * The real PP-OCRv5 models for the opt-in tests (about 45 MB, so not in the repo): in `GLYPHDRAFT_MODELS_DIR`, or by
+ * The real models for the opt-in tests (PP-OCRv5 about 45 MB, translation about 120 MB per direction, so not in the repo): in `GLYPHDRAFT_MODELS_DIR`, or by
  * default in `engine/build/test-models`. With `GLYPHDRAFT_NETWORK_TESTS=1` the missing packs are downloaded there first
  * (checked by the pinned checksums); without models and without that variable a test does nothing and says so.
  */
@@ -18,11 +20,13 @@ internal object TestModels {
     private const val NETWORK_VARIABLE = "GLYPHDRAFT_NETWORK_TESTS"
     private const val FOLDER_VARIABLE = "GLYPHDRAFT_MODELS_DIR"
 
+    private val allPacks: List<PackManifest> = ModelManifest.packs + TranslationManifest.packs
+
     val fixtures = File("src/test/resources/fixtures")
 
     /** A catalog over the models folder with every pack of [packs] installed, or null (after saying so) when it cannot be. */
     fun catalogWith(testName: String, packs: Set<String>): FileModelCatalog? {
-        val catalog = FileModelCatalog(ModelManifest.packs, modelsFolder())
+        val catalog = FileModelCatalog(allPacks, modelsFolder())
         val missing = packs.filter { it !in catalog.installedPackIds.value }
         if (missing.isNotEmpty() && System.getenv(NETWORK_VARIABLE).isNullOrBlank()) {
             println("$testName skipped: models are not installed (set $NETWORK_VARIABLE=1 to download them).")
@@ -31,7 +35,7 @@ internal object TestModels {
 
         val installer = HttpModelInstaller(catalog)
         for (id in missing) {
-            val pack = ModelManifest.packs.first { it.pack.id == id }.pack
+            val pack = allPacks.first { it.pack.id == id }.pack
             val outcome = runBlocking { installer.install(pack) {} }
             assertTrue(outcome is Outcome.Success, "Installing $id failed: $outcome")
         }
