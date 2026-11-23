@@ -31,7 +31,7 @@ data class TranslationModelFiles(
  *
  * On disk: `<models>/mt/<from>-<to>/<file name>`, the file names as in the repository (`decoder_model_merged_quantized.onnx`
  * has the cache, `decoder_model_quantized.onnx` has not). English to Japanese and English to Hebrew are not offered (no
- * working model, decision 0012); Hebrew to Russian and the other Hebrew exports follow in task 6.
+ * working model, decision 0012); the other Hebrew exports of the uploader were tested and are not offered (decision 0016).
  */
 object TranslationManifest {
     private const val XENOVA = "https://huggingface.co/Xenova"
