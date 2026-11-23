@@ -85,3 +85,7 @@ Nothing new to ship: ORT for Android is already in the app and OPUS-MT int8 uses
 ## Result
 
 See decision 0012 (proposed). In short: OPUS-MT int8 on ONNX Runtime with our own Kotlin tokenizer works and is good for de, fr, es, ru, zh and ja and he as sources, English as the pivot costs 3 to 8 chrF; but the pack is 213 to 226 MB (over the ceiling), Hebrew as a target and Japanese as a target have no usable model.
+
+## Addendum (task 6, 2026-11-23)
+
+The other Hebrew exports of the uploader were run through the real translator: en-he, he-ru, de-he, es-he, fr-he and he-es are broken (chrF 0.1 to 8.8), he-de works (71.6) but is worse than he to en to de (75.6). The he-ru and en-he failures of this spike were therefore not a tokenizer or end-id mistake of the spike. Details, the pivot figures of every Hebrew pair, license and mirror: decision 0016.

@@ -43,6 +43,10 @@ class FixtureTranslationTest {
             Case(Language.Russian, Language.German, 74.6),
             Case(Language.Japanese, Language.German, 67.7),
             Case(Language.English, Language.Hebrew, 67.3),
+            // Hebrew pairs through the hubs (task 6, decision 0016): measured with the shipped routes, not in the spike.
+            Case(Language.Hebrew, Language.German, 75.6),
+            Case(Language.Hebrew, Language.Russian, 64.6),
+            Case(Language.German, Language.Hebrew, 66.0),
         )
 
     @Test
@@ -84,6 +88,7 @@ class FixtureTranslationTest {
             return listOf("${case.label}: ${hypotheses.size} translated paragraphs for ${references.size} sentences")
         }
 
+        writeOutput(case, sources, hypotheses, references)
         val score = Chrf.score(hypotheses, references)
         val note = if (score < case.spike - WARNING_MARGIN) "  WARNING: more than $WARNING_MARGIN under the spike" else ""
         println("${case.label} chrF %.1f (spike %.1f, route %s)%s".format(score, case.spike, translation.route.joinToString(">") { it.code }, note))
@@ -102,6 +107,17 @@ class FixtureTranslationTest {
         return emptyList()
     }
 
+    /** The sentences of one direction as source, output and reference, in `build/translation-output/<from>-<to>.txt`, for a human read. */
+    private fun writeOutput(case: Case, sources: List<String>, hypotheses: List<String>, references: List<String>) {
+        val text =
+            sources.indices.joinToString("\n\n") { index ->
+                "[${index + 1}] ${sources[index]}\nOutput:    ${hypotheses[index]}\nReference: ${references[index]}"
+            }
+        val file = File(OUTPUT_DIRECTORY, "${case.from.code}-${case.to.code}.txt")
+        file.parentFile.mkdirs()
+        file.writeText(text + "\n", Charsets.UTF_8)
+    }
+
     private fun lines(code: String): List<String> =
         File(DIRECTORY, "$code.txt").readLines(Charsets.UTF_8).map { it.trim() }.filter { it.isNotEmpty() }
 
@@ -111,6 +127,7 @@ class FixtureTranslationTest {
 
     private companion object {
         val DIRECTORY = File("src/test/resources/translation")
+        val OUTPUT_DIRECTORY = File("build/translation-output")
         const val PARAGRAPH = "\n\n"
         const val WARNING_MARGIN = 2.0
         const val FLOOR_MARGIN = 5.0
