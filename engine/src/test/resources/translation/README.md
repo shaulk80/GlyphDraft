@@ -1,0 +1,1 @@
+Translation reference set for the M3 spike and the later quality tests: 30 everyday sentences written for this project in English and translated by hand into de, fr, es, ru, zh, ja and he. One file per language, line N is the same sentence in every file. The texts are our own and may be committed. The translations have not been reviewed by native speakers.
