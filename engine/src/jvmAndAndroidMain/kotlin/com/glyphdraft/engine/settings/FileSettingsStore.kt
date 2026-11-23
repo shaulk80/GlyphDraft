@@ -63,14 +63,23 @@ class FileSettingsStore(
         val properties = Properties()
         properties.load(bytes.inputStream().reader(Charsets.UTF_8))
         val theme = ThemeMode.entries.firstOrNull { it.name == properties.getProperty(THEME) } ?: ThemeMode.System
-        val code = properties.getProperty(DEFAULT_LANGUAGE)?.trim()
-        return Settings(theme = theme, defaultLanguage = languages.firstOrNull { it.code == code })
+        return Settings(
+            theme = theme,
+            defaultLanguage = language(properties, DEFAULT_LANGUAGE),
+            defaultTarget = language(properties, DEFAULT_TARGET),
+        )
+    }
+
+    private fun language(properties: Properties, key: String): Language? {
+        val code = properties.getProperty(key)?.trim()
+        return languages.firstOrNull { it.code == code }
     }
 
     private fun serialize(settings: Settings): ByteArray {
         val properties = Properties()
         properties.setProperty(THEME, settings.theme.name)
         settings.defaultLanguage?.let { properties.setProperty(DEFAULT_LANGUAGE, it.code) }
+        settings.defaultTarget?.let { properties.setProperty(DEFAULT_TARGET, it.code) }
         val output = ByteArrayOutputStream()
         output.writer(Charsets.UTF_8).use { properties.store(it, null) }
         return output.toByteArray()
@@ -79,5 +88,6 @@ class FileSettingsStore(
     private companion object {
         const val THEME = "theme"
         const val DEFAULT_LANGUAGE = "defaultLanguage"
+        const val DEFAULT_TARGET = "defaultTarget"
     }
 }

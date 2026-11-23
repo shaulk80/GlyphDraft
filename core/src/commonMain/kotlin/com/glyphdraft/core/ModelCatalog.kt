@@ -5,12 +5,18 @@ import kotlinx.coroutines.flow.StateFlow
 /**
  * One downloadable unit of models. [id] is stable (it names the folder in the data folder); [languages] are the
  * languages the pack lets the engine read; [sizeBytes] is the download size shown to the user before installing.
+ *
+ * A translation model is a pack too, so that the manifest, installer and model list serve both (decision 0013): it has a
+ * [direction], an empty [languages] (it reads nothing, so the pickers of readable languages ignore it), and may be
+ * [experimental] (decision 0012: weak quality, shown with a mark). Recognition packs have no direction.
  */
 data class ModelPack(
     val id: String,
     val displayName: String,
     val languages: Set<Language>,
     val sizeBytes: Long,
+    val direction: TranslationDirection? = null,
+    val experimental: Boolean = false,
 )
 
 /** Which model packs exist and which of them are installed on this device. */
@@ -42,3 +48,13 @@ fun ModelCatalog.packFor(language: Language): ModelPack? {
 }
 
 fun ModelCatalog.isInstalled(pack: ModelPack): Boolean = pack.id in installedPackIds.value
+
+/** Every translation model the app knows, installed or not, in catalog order. */
+fun ModelCatalog.translationPacks(): List<ModelPack> = packs.filter { it.direction != null }
+
+/** The translation model of [direction], installed or not; null when the app has none for it. */
+fun ModelCatalog.packFor(direction: TranslationDirection): ModelPack? = packs.firstOrNull { it.direction == direction }
+
+/** Directions that can be translated right now, without any download. */
+fun ModelCatalog.usableDirections(): Set<TranslationDirection> =
+    installedPacks().mapNotNullTo(mutableSetOf()) { it.direction }

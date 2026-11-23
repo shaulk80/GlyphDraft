@@ -1,10 +1,10 @@
 # 0012: Translation engine for M3
 
-Date: 2026-11-23. Status: **proposed**, waits for the owner's answers on the two questions at the end. Evidence: `docs/spikes/m3-translation.md`.
+Date: 2026-11-23. Status: **accepted** by the owner on 2026-11-23 (answers at the end). Evidence: `docs/spikes/m3-translation.md`.
 
 - **Problem.** M3 needs on-device translation between the eight languages of the pickers on Windows, Linux and Android from shared Kotlin code, with no new native library and a license that allows shipping.
 
-## Decision (proposed)
+## Decision
 
 1. **Engine: OPUS-MT (Marian) models, int8 ONNX, on the ONNX Runtime the app already ships**, with our own greedy decode loop (key/value cache, merged decoder) and our own SentencePiece unigram tokenizer in Kotlin (no JNI). Models come from the `Xenova/opus-mt-*` repos, one pair of files per direction, downloaded on first use as in 0007 (pinned URL at a commit, SHA-256, size).
 2. **English is the pivot.** Direct models exist only to and from English. Any other pair runs two models (source to en to target); the UI says "via English". It costs 3 to 8 chrF and twice the time.
@@ -25,7 +25,7 @@ Date: 2026-11-23. Status: **proposed**, waits for the owner's answers on the two
 - Models are hosted by third parties (Xenova on the Hugging Face hub): pinned by hash, a removed repo breaks first-time installs; a mirror is the later fix.
 - Quality was measured on 30 clean one-sentence lines of our own; real OCR text will score lower.
 
-## Questions for the owner
+## Owner's answers (2026-11-23)
 
-1. The 150 MB ceiling was meant per pack of both directions. OPUS-MT gives about 110 MB per direction. Accept **per direction** as the unit (a language is then about 220 MB if both ways are installed)? If not, the alternative is to do the vocabulary re-export ourselves (about 30 to 40 MB less per direction, needs Python and Optimum, not installed) and still not reach 150 MB for two directions.
-2. Hebrew: ship **he to en only at 366 MB** (good quality, large), or leave Hebrew out of translation in v0.2.0 (OCR keeps reading Hebrew)? And is "ja and he as source only" acceptable for v0.2.0?
+1. **Size ceiling: about 115 MB per direction** (one direction is the download unit; a language is about 220 MB if both ways are installed). Confirmed by the owner, with Option A of the discussion: he to en (366 MB) is an optional download marked large and experimental, and stays only if the Android memory test in task 7 allows it (task 6).
+2. **Hebrew is included** (as a target through the Russian hub, as a source directly). Japanese as a target is not offered: Japanese is a source only (confirmed by the owner).

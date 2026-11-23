@@ -24,7 +24,7 @@ Spike result (`docs/spikes/m3-translation.md`, decision 0012): OPUS-MT (Marian) 
 
 Tasks:
 1. **Spike** (done 2026-11-23).
-2. **Types in `core`** (decision 0013). `Translator` (`suspend translate(text, from, to): Outcome<Translation>`, cancellable), `Translation` (text, from, to, route), a catalog of translation directions (a model is a direction, not a "readable language"; decide whether `ModelPack` grows a kind or a second catalog is added), `Settings.defaultTarget`. Stubs and tests; M2 screens keep working.
+2. **Types in `core`** (decision 0013, done 2026-11-23). `Translator` (`suspend translate(text, from, to): Outcome<Translation>`, cancellable), `Translation` (text, from, to, route), a catalog of translation directions (a model is a direction, not a "readable language"; decide whether `ModelPack` grows a kind or a second catalog is added), `Settings.defaultTarget`. Stubs and tests; M2 screens keep working.
 3. **Segmenter and tokenizer** (`engine`, shared code). Paragraph and sentence splitting (Latin, Cyrillic, Hebrew, CJK punctuation), rejoining OCR lines, keeping blank lines; the unigram tokenizer from the spike behind a small interface; parameterized tests.
 4. **Direction manifest and routes.** Pinned URL at a commit, SHA-256 and size per file (as 0007); route planner over the hubs; tests with the local model server. Hebrew files come from one private uploader: mirror them (decide where) and pin the mirror.
 5. **The translator.** Model sessions, decode loop (merged cached decoder and the plain decoder of the Hebrew exports), sentence batching, cancellation, memory release (one direction open at a time); opt-in fixture test with the real models (chrF per direction reported as a warning, a floor as a regression guard; reference set in `engine/src/test/resources/translation`). Split 5a (one direction end to end) and 5b (all directions, routes) if over the size limit.
@@ -35,7 +35,7 @@ Tasks:
 10. **End to end and docs.** Opt-in test image to translation (several routes, Latin and non-Latin sources, Hebrew); README (privacy, CC-BY credits for Helsinki-NLP, OPUS-MT and the converters, also in Settings); `architecture.md`; `CLAUDE.md` gotchas; checklist `docs/manual/m3.md`.
 11. **Hand test and v0.2.0.** Owner runs the checklist on desktop and the emulator (first-use download, offline afterwards, each route type, a photo, cancel); fixes; `/release 0.2.0`.
 
-Decided by the owner 2026-11-23: M3 before the open issues (#30 parked; #8, #12, #15 are CI flakes); weak directions ship marked "experimental"; Hebrew is included. Size: the 150 MB figure becomes about 115 MB per direction, he to en (366 MB) an optional exception (proposed in 0012, owner to confirm).
+Decided by the owner 2026-11-23: M3 before the open issues (#30 parked; #8, #12, #15 are CI flakes); weak directions ship marked "experimental"; Hebrew is included. Size: the 150 MB figure becomes about 115 MB per direction, he to en (366 MB) an optional exception (decision 0012, accepted).
 
 ## M4 - Handwriting
 

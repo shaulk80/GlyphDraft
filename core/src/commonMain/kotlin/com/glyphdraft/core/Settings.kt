@@ -7,6 +7,8 @@ data class Settings(
     val theme: ThemeMode = ThemeMode.System,
     /** Language preselected on the Home screen; null means "auto-detect". */
     val defaultLanguage: Language? = null,
+    /** Language to translate into after reading; null means "do not translate". */
+    val defaultTarget: Language? = null,
 )
 
 /**
