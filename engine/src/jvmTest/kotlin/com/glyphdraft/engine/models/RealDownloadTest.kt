@@ -1,6 +1,8 @@
 package com.glyphdraft.engine.models
 
 import com.glyphdraft.core.Outcome
+import java.net.HttpURLConnection
+import java.net.URI
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -36,6 +38,40 @@ class RealDownloadTest {
             assertEquals(setOf(ModelManifest.HEBREW, ModelManifest.ESLAV), catalog.installedPackIds.value)
         } finally {
             folder.toFile().deleteRecursively()
+        }
+    }
+
+    /** The translation models are 1.2 GB together, so each file is asked for its size (HEAD) instead of downloaded. */
+    @Test
+    fun everyTranslationFileExistsOnTheRealServerWithThePinnedSize() {
+        if (System.getenv(ENABLE_VARIABLE).isNullOrBlank()) {
+            return
+        }
+
+        val wrong = mutableListOf<String>()
+        for (file in TranslationManifest.packs.flatMap { it.files }) {
+            val size = sizeOnServer(file.url)
+            if (size != file.sizeBytes) {
+                wrong.add("${file.url}: server says $size, manifest ${file.sizeBytes}")
+            }
+        }
+
+        assertEquals(emptyList(), wrong)
+    }
+
+    private fun sizeOnServer(url: String): Long {
+        val connection = URI(url).toURL().openConnection() as HttpURLConnection
+        try {
+            connection.requestMethod = "HEAD"
+            connection.connectTimeout = 15_000
+            connection.readTimeout = 30_000
+            if (connection.responseCode != HttpURLConnection.HTTP_OK) {
+                return -connection.responseCode.toLong()
+            }
+
+            return connection.contentLengthLong
+        } finally {
+            connection.disconnect()
         }
     }
 
