@@ -46,7 +46,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: engine/build/test-models
-          key: test-models-${{ hashFiles('engine/src/jvmAndAndroidMain/kotlin/com/glyphdraft/engine/models/ModelManifest.kt') }}
+          key: test-models-${{ hashFiles('engine/src/jvmAndAndroidMain/kotlin/com/glyphdraft/engine/models/ModelManifest.kt', 'engine/src/jvmAndAndroidMain/kotlin/com/glyphdraft/engine/models/TranslationManifest.kt') }}
       - name: Build, test, package, smoke test
         shell: pwsh
         run: ./scripts/build.ps1 -Target windows
@@ -80,7 +80,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: engine/build/test-models
-          key: test-models-${{ hashFiles('engine/src/jvmAndAndroidMain/kotlin/com/glyphdraft/engine/models/ModelManifest.kt') }}
+          key: test-models-${{ hashFiles('engine/src/jvmAndAndroidMain/kotlin/com/glyphdraft/engine/models/ModelManifest.kt', 'engine/src/jvmAndAndroidMain/kotlin/com/glyphdraft/engine/models/TranslationManifest.kt') }}
       - name: Build, test, package, smoke test
         shell: pwsh
         run: ./scripts/build.ps1 -Target linux
