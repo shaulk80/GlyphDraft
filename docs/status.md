@@ -9,7 +9,7 @@ M0, M1 and M2 are done. `v0.1.0` (text from an image: PP-OCRv5 on ONNX Runtime, 
 ## Next
 
 - Issues from the hand test: #28 and #29 are closed (#28: the sort order of the Android file dialog is a platform limit, in the README under Known issues); #30 (Linux window icon) is parked until seen on a native Linux desktop.
-- Next milestone: M3, translation (`docs/plan.md`). Plan it first; the owner decides the order of M3 and the open issues.
+- Next milestone: M3, translation. Planned 2026-11-23 in `docs/plan.md` (10 tasks; task 1 is a spike that picks the model and gates the rest). Owner decided: M3 before the open issues, weak directions marked experimental, 150 MB per pack as a working ceiling. Next: task 1, the spike.
 
 ## Open
 
