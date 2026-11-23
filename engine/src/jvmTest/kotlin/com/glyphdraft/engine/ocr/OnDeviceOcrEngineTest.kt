@@ -2,6 +2,8 @@ package com.glyphdraft.engine.ocr
 
 import com.glyphdraft.core.ImageInput
 import com.glyphdraft.core.Language
+import com.glyphdraft.core.ModelPack
+import com.glyphdraft.core.TranslationDirection
 import com.glyphdraft.core.Outcome
 import com.glyphdraft.core.RecognitionResult
 import com.glyphdraft.core.stub.StubModelCatalog
@@ -31,10 +33,11 @@ class OnDeviceOcrEngineTest {
         boxes: List<TextBox> = this.boxes,
         hebrew: HebrewReader? = null,
         decoder: ImageDecoder = FakeDecoder(),
+        extraPacks: List<ModelPack> = emptyList(),
     ): Setup {
         val detector = FakeDetector(boxes)
         val source = FakeModelSource(detector, recognizers)
-        val engine = OnDeviceOcrEngine(decoder, StubModelCatalog(installed = installed), PaddleReader(source), TextLanguageDetector(), hebrew)
+        val engine = OnDeviceOcrEngine(decoder, StubModelCatalog(StubModelCatalog.defaultPacks() + extraPacks, installed), PaddleReader(source), TextLanguageDetector(), hebrew)
         return Setup(engine, detector, source)
     }
 
@@ -60,6 +63,18 @@ class OnDeviceOcrEngineTest {
             assertEquals(Language.Russian, result.language)
             assertFalse(result.detected)
             assertEquals(listOf(ModelManifest.ESLAV), s.source.opened)
+        }
+
+    @Test
+    fun anInstalledTranslationModelIsNotAReadingPack() =
+        runTest {
+            val translation = ModelPack("mt-en-de", "English to German", emptySet(), 1, TranslationDirection(Language.English, Language.German))
+            val s = setup(setOf(ModelManifest.LATIN, translation.id), latinWins("Hello there"), extraPacks = listOf(translation))
+
+            val result = success(s.engine.recognize(input, null))
+
+            assertEquals(Language.English, result.language)
+            assertEquals(listOf(ModelManifest.LATIN), s.source.opened)
         }
 
     @Test

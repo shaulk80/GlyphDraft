@@ -67,7 +67,8 @@ class OnDeviceOcrEngine(
     }
 
     private suspend fun readDetectingLanguage(page: PixelImage): Outcome<RecognitionResult> {
-        val installed = catalog.installedPacks()
+        // A translation model is in the same catalog (decision 0013) but reads nothing, so it must not take part in the probe.
+        val installed = catalog.installedPacks().filter { it.direction == null }
         if (installed.isEmpty()) {
             return Outcome.Failure("No language models are installed. Install one to read text.")
         }
