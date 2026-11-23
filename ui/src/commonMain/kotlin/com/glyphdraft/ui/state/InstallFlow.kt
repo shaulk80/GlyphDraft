@@ -8,12 +8,13 @@ import com.glyphdraft.core.ModelPack
 import com.glyphdraft.core.Outcome
 import com.glyphdraft.core.isInstalled
 import com.glyphdraft.core.packFor
+import com.glyphdraft.core.packsForRoute
 import com.glyphdraft.core.usableLanguages
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 
 /**
- * The first-use download of a model pack as it shows in [AppState.installPrompt]: offer, progress, failure with retry.
+ * The first-use download of model packs as it shows in [AppState.installPrompt]: offer, progress, failure with retry.
  * The [AppController] owns the coroutine and the busy flag; this class only moves the prompt through its steps.
  */
 internal class InstallFlow(
@@ -40,8 +41,15 @@ internal class InstallFlow(
         return null
     }
 
-    fun offer(pack: ModelPack, thenRecognize: Boolean) {
-        state.update { it.copy(installPrompt = InstallPrompt(pack, thenRecognize), notice = null) }
+    /**
+     * The translation packs of the route from [from] to [to] that are not installed yet, in order of use (empty when
+     * the translation can run now); null when the pair has no route.
+     */
+    fun packsNeededForTranslation(from: Language, to: Language): List<ModelPack>? =
+        catalog.packsForRoute(from, to)?.filterNot { catalog.isInstalled(it) }
+
+    fun offer(packs: List<ModelPack>, then: AfterInstall) {
+        state.update { it.copy(installPrompt = InstallPrompt(packs, then), notice = null) }
     }
 
     fun dismiss() {
@@ -49,22 +57,37 @@ internal class InstallFlow(
     }
 
     /**
-     * Downloads the pack of [prompt] and returns whether it is installed now. A failure stays in the prompt, with its
-     * message, so the dialog can offer a retry; success and cancellation close it.
+     * Downloads the packs of [prompt] that are not installed yet, one after the other, and returns whether all of them
+     * are installed now. Progress counts the bytes of all packs together. A failure stays in the prompt, with its
+     * message, so the dialog can offer a retry (which skips the packs already installed); success and cancellation close it.
      */
     suspend fun run(prompt: InstallPrompt): Boolean {
         state.update { it.copy(installPrompt = prompt.copy(running = true, progress = null, error = null)) }
         var installed = false
         try {
-            when (val outcome = installer.install(prompt.pack, ::showProgress)) {
-                is Outcome.Success -> installed = true
-                is Outcome.Failure -> showError(outcome.message)
-            }
+            installed = installAll(prompt.packs.filterNot { catalog.isInstalled(it) })
         } finally {
             finish(installed)
         }
 
         return installed
+    }
+
+    private suspend fun installAll(pending: List<ModelPack>): Boolean {
+        val total = pending.sumOf { it.sizeBytes }
+        var finishedBytes = 0L
+        for (pack in pending) {
+            val before = finishedBytes
+            val outcome = installer.install(pack) { showProgress(InstallProgress(before + it.bytesDone, total)) }
+            if (outcome is Outcome.Failure) {
+                showError(outcome.message)
+                return false
+            }
+
+            finishedBytes += pack.sizeBytes
+        }
+
+        return true
     }
 
     private fun showProgress(progress: InstallProgress) {

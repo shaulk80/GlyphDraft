@@ -33,6 +33,7 @@ import com.glyphdraft.core.stub.InMemorySettingsStore
 import com.glyphdraft.core.stub.StubModelCatalog
 import com.glyphdraft.core.stub.StubModelInstaller
 import com.glyphdraft.core.stub.StubOcrEngine
+import com.glyphdraft.core.stub.StubTranslator
 import com.glyphdraft.ui.state.AppController
 import com.glyphdraft.core.ThemeMode
 import kotlinx.coroutines.CompletableDeferred
@@ -115,7 +116,7 @@ class ClickThroughTest {
     private val clipboard = FakeClipboard()
     private val catalog = StubModelCatalog()
     private val controller =
-        AppController(scope, StubOcrEngine(latencyMillis = 0), picker, saver, catalog, StubModelInstaller(catalog, steps = 2, stepMillis = 0), InMemorySettingsStore())
+        AppController(scope, StubOcrEngine(latencyMillis = 0), StubTranslator(latencyMillis = 0), picker, saver, catalog, StubModelInstaller(catalog, steps = 2, stepMillis = 0), InMemorySettingsStore())
 
     private fun ComposeUiTest.showApp(shown: AppController = controller) {
         setContent {
@@ -184,7 +185,7 @@ class ClickThroughTest {
         runComposeUiTest {
             val empty = StubModelCatalog(installed = emptySet())
             val firstUse =
-                AppController(scope, StubOcrEngine(latencyMillis = 0), picker, saver, empty, StubModelInstaller(empty, steps = 2, stepMillis = 0), InMemorySettingsStore())
+                AppController(scope, StubOcrEngine(latencyMillis = 0), StubTranslator(latencyMillis = 0), picker, saver, empty, StubModelInstaller(empty, steps = 2, stepMillis = 0), InMemorySettingsStore())
             showApp(firstUse)
 
             click("Choose image…")
@@ -216,7 +217,7 @@ class ClickThroughTest {
     fun aDoubtedReadingShowsTheHintAboveTheTextAndAGoodOneDoesNot() =
         runComposeUiTest {
             val engine = FixedEngine(RecognitionResult(", . 4", Language.English, detected = true, lowQuality = true))
-            val doubting = AppController(scope, engine, picker, saver, catalog, StubModelInstaller(catalog, steps = 2, stepMillis = 0), InMemorySettingsStore())
+            val doubting = AppController(scope, engine, StubTranslator(latencyMillis = 0), picker, saver, catalog, StubModelInstaller(catalog, steps = 2, stepMillis = 0), InMemorySettingsStore())
             showApp(doubting)
 
             click("Choose image…")
@@ -238,7 +239,7 @@ class ClickThroughTest {
     fun selectedResultTextCopiesWithCtrlCAndCtrlInsert() =
         runComposeUiTest {
             val engine = FixedEngine(RecognitionResult("Hello world", Language.English, detected = true))
-            val reading = AppController(scope, engine, picker, saver, catalog, StubModelInstaller(catalog, steps = 2, stepMillis = 0), InMemorySettingsStore())
+            val reading = AppController(scope, engine, StubTranslator(latencyMillis = 0), picker, saver, catalog, StubModelInstaller(catalog, steps = 2, stepMillis = 0), InMemorySettingsStore())
             showApp(reading)
             click("Choose image…")
             waitForText("scan.png (3 bytes)")
@@ -263,7 +264,7 @@ class ClickThroughTest {
     fun cancelFreesTheScreenAtOnceWhileTheEngineIsStillStopping() =
         runComposeUiTest {
             val engine = StuckEngine()
-            val reading = AppController(scope, engine, picker, saver, catalog, StubModelInstaller(catalog, steps = 2, stepMillis = 0), InMemorySettingsStore())
+            val reading = AppController(scope, engine, StubTranslator(latencyMillis = 0), picker, saver, catalog, StubModelInstaller(catalog, steps = 2, stepMillis = 0), InMemorySettingsStore())
             showApp(reading)
             click("Choose image…")
             waitForText("scan.png (3 bytes)")
@@ -292,7 +293,7 @@ class ClickThroughTest {
     private fun checkResultTextLayout(text: String, direction: ResolvedTextDirection) =
         runComposeUiTest {
             val engine = FixedEngine(RecognitionResult(text, Language.English, detected = true))
-            val reading = AppController(scope, engine, picker, saver, catalog, StubModelInstaller(catalog, steps = 2, stepMillis = 0), InMemorySettingsStore())
+            val reading = AppController(scope, engine, StubTranslator(latencyMillis = 0), picker, saver, catalog, StubModelInstaller(catalog, steps = 2, stepMillis = 0), InMemorySettingsStore())
             showApp(reading)
             click("Choose image…")
             waitForText("scan.png (3 bytes)")

@@ -55,6 +55,7 @@ fun main() {
                     AppController(
                         scope,
                         LoggingOcrEngine(engine.engine) { message, cause -> logRecognition(log, message, cause) },
+                        engine.translator,
                         DesktopImagePicker(chooser, log),
                         DesktopTextSaver(chooser, log),
                         engine.catalog,

@@ -30,10 +30,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-private val photo = ImageInput("photo.png", byteArrayOf(1))
-private val sample = RecognitionResult("hello", Language.English, detected = true)
+internal val photo = ImageInput("photo.png", byteArrayOf(1))
+internal val sample = RecognitionResult("hello", Language.English, detected = true)
 
-private class FakePicker(var outcome: Outcome<ImageInput?> = Outcome.Success(photo)) : ImagePicker {
+internal class FakePicker(var outcome: Outcome<ImageInput?> = Outcome.Success(photo)) : ImagePicker {
     var calls = 0
 
     override suspend fun pick(): Outcome<ImageInput?> {
@@ -43,7 +43,7 @@ private class FakePicker(var outcome: Outcome<ImageInput?> = Outcome.Success(pho
 }
 
 /** Waits on [gate] when set, so a test can look at the state while recognition is running. */
-private class FakeEngine(var outcome: Outcome<RecognitionResult> = Outcome.Success(sample)) : OcrEngine {
+internal class FakeEngine(var outcome: Outcome<RecognitionResult> = Outcome.Success(sample)) : OcrEngine {
     var gate: CompletableDeferred<Unit>? = null
     var lastHint: Language? = null
     var calls = 0
@@ -64,7 +64,7 @@ private class FakeEngine(var outcome: Outcome<RecognitionResult> = Outcome.Succe
     }
 }
 
-private class FakeSaver(var outcome: Outcome<Boolean> = Outcome.Success(true)) : TextSaver {
+internal class FakeSaver(var outcome: Outcome<Boolean> = Outcome.Success(true)) : TextSaver {
     var savedName: String? = null
     var savedText: String? = null
 
@@ -76,7 +76,7 @@ private class FakeSaver(var outcome: Outcome<Boolean> = Outcome.Success(true)) :
 }
 
 /** Marks the pack installed after a successful call; waits on [gate] first when set, so a test can cancel mid-download. */
-private class FakeInstaller(private val catalog: () -> StubModelCatalog) : ModelInstaller {
+internal class FakeInstaller(private val catalog: () -> StubModelCatalog) : ModelInstaller {
     var outcomes = ArrayDeque<Outcome<Unit>>()
     var gate: CompletableDeferred<Unit>? = null
     val installed = ArrayList<String>()
@@ -94,7 +94,7 @@ private class FakeInstaller(private val catalog: () -> StubModelCatalog) : Model
     }
 }
 
-private class FakeSettingsStore(var stored: Settings = Settings()) : SettingsStore {
+internal class FakeSettingsStore(var stored: Settings = Settings()) : SettingsStore {
     var saveOutcome: Outcome<Unit> = Outcome.Success(Unit)
     val saves = ArrayList<Settings>()
 
@@ -110,12 +110,13 @@ private class FakeSettingsStore(var stored: Settings = Settings()) : SettingsSto
 class AppControllerTest {
     private val picker = FakePicker()
     private val engine = FakeEngine()
+    private val translator = FakeTranslator()
     private val saver = FakeSaver()
     private var catalog = StubModelCatalog()
     private val installer = FakeInstaller { catalog }
     private val settingsStore = FakeSettingsStore()
 
-    private fun TestScope.controller() = AppController(this, engine, picker, saver, catalog, installer, settingsStore)
+    private fun TestScope.controller() = AppController(this, engine, translator, picker, saver, catalog, installer, settingsStore)
 
     private fun TestScope.controllerWithImage(): AppController {
         val controller = controller()
@@ -430,7 +431,7 @@ class AppControllerTest {
                 controller.recognize()
                 advanceUntilIdle()
 
-                assertEquals(offered, controller.state.value.installPrompt?.pack?.id, "language $language, installed $installedPacks")
+                assertEquals(offered, controller.state.value.installPrompt?.packs?.singleOrNull()?.id, "language $language, installed $installedPacks")
                 assertEquals(if (offered == null) 1 else 0, engine.calls, "language $language, installed $installedPacks")
             }
         }
@@ -447,7 +448,7 @@ class AppControllerTest {
             controller.recognize()
             advanceUntilIdle()
 
-            assertEquals("latin", controller.state.value.installPrompt?.pack?.id)
+            assertEquals("latin", controller.state.value.installPrompt?.packs?.singleOrNull()?.id)
             assertEquals(0, engine.calls)
         }
 
@@ -479,7 +480,7 @@ class AppControllerTest {
             val hebrew = catalog.packs.first { it.id == "hebrew" }
 
             controller.requestInstall(hebrew)
-            assertEquals(hebrew, controller.state.value.installPrompt?.pack)
+            assertEquals(listOf(hebrew), controller.state.value.installPrompt?.packs)
             controller.confirmInstall()
             advanceUntilIdle()
 

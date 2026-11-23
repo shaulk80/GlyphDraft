@@ -40,6 +40,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         AppController(
             scope = viewModelScope,
             engine = LoggingOcrEngine(engine.engine, ::logRecognition),
+            translator = engine.translator,
             picker = AndroidImagePicker(application.contentResolver, imageBridge),
             saver = AndroidTextSaver(application.contentResolver, saveBridge),
             catalog = engine.catalog,
