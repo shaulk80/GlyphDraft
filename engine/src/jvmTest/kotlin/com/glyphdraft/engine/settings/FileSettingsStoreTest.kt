@@ -29,6 +29,8 @@ class FileSettingsStoreTest {
                     Settings(ThemeMode.Dark, null),
                     Settings(ThemeMode.Light, Language.Hebrew),
                     Settings(ThemeMode.System, Language.Russian),
+                    Settings(ThemeMode.System, null, Language.English),
+                    Settings(ThemeMode.Dark, Language.Hebrew, Language.Russian),
                 )
 
             for (settings in cases) {
@@ -47,6 +49,8 @@ class FileSettingsStoreTest {
                     "theme=Dark\ndefaultLanguage=xx\nfutureKey=1\n" to Settings(ThemeMode.Dark, null),
                     "theme=Purple\ndefaultLanguage=he\n" to Settings(ThemeMode.System, Language.Hebrew),
                     "theme=Light\ndefaultLanguage=\\uZZZZ\n" to Settings(),
+                    "defaultTarget=ru\n" to Settings(defaultTarget = Language.Russian),
+                    "defaultLanguage=he\ndefaultTarget=xx\n" to Settings(defaultLanguage = Language.Hebrew),
                 )
 
             for ((content, expected) in cases) {

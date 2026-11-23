@@ -67,6 +67,23 @@ class ModelCatalogTest {
     }
 
     @Test
+    fun translationPacksReadNoLanguageAndAreFoundByDirection() {
+        val deToEn = TranslationDirection(Language.German, Language.English)
+        val enToDe = TranslationDirection(Language.English, Language.German)
+        val germanToEnglish = ModelPack("de-en", "German to English", emptySet(), 110, deToEn)
+        val englishToGerman = ModelPack("en-de", "English to German", emptySet(), 112, enToDe, experimental = true)
+        val catalog = StubModelCatalog(packs = listOf(latin, germanToEnglish, englishToGerman), installed = setOf("latin", "en-de"))
+
+        assertEquals(listOf(germanToEnglish, englishToGerman), catalog.translationPacks())
+        assertEquals(setOf(Language.English, Language.German), catalog.usableLanguages())
+        assertEquals(setOf(Language.English, Language.German), catalog.knownLanguages())
+        assertEquals(setOf(enToDe), catalog.usableDirections())
+        assertEquals(germanToEnglish, catalog.packFor(deToEn))
+        assertEquals(englishToGerman, catalog.packFor(enToDe))
+        assertNull(catalog.packFor(TranslationDirection(Language.English, Language.Japanese)))
+    }
+
+    @Test
     fun installProgressFraction() {
         val cases =
             listOf(
