@@ -8,6 +8,7 @@ import com.glyphdraft.core.ModelPack
 import com.glyphdraft.core.Outcome
 import com.glyphdraft.core.isInstalled
 import com.glyphdraft.core.packFor
+import com.glyphdraft.core.usableLanguages
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 
@@ -31,8 +32,9 @@ internal class InstallFlow(
             return pack
         }
 
-        if (catalog.installedPackIds.value.isEmpty()) {
-            return catalog.packs.firstOrNull()
+        // Translation models (they read nothing) do not count: a device with only those still has no way to read.
+        if (catalog.usableLanguages().isEmpty()) {
+            return catalog.packs.firstOrNull { it.direction == null }
         }
 
         return null
