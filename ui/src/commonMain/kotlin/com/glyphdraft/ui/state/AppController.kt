@@ -12,6 +12,7 @@ import com.glyphdraft.core.RecognitionResult
 import com.glyphdraft.core.SettingsStore
 import com.glyphdraft.core.TextSaver
 import com.glyphdraft.core.ThemeMode
+import com.glyphdraft.core.Translator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +30,7 @@ import kotlinx.coroutines.sync.withLock
 class AppController(
     private val scope: CoroutineScope,
     private val engine: OcrEngine,
+    private val translator: Translator,
     private val picker: ImagePicker,
     private val saver: TextSaver,
     catalog: ModelCatalog,
@@ -67,7 +69,15 @@ class AppController(
         mutableState.update { it.copy(language = language) }
     }
 
-    /** Reads the chosen image; when the models for the language are not installed, offers the download first. */
+    /** The language to translate the next result into; null means "do not translate". Does not translate by itself, see [translate]. */
+    fun selectTarget(target: Language?) {
+        mutableState.update { current -> current.copy(target = target, translation = current.translation?.takeIf { it.to == target }) }
+    }
+
+    /**
+     * Reads the chosen image, then translates the text when a target is chosen. When the models for the language are
+     * not installed, offers the download first.
+     */
     fun recognize() {
         val image = state.value.image
         if (image == null || !state.value.canRecognize) {
@@ -76,11 +86,25 @@ class AppController(
 
         val pack = installFlow.packNeededFor(state.value.language)
         if (pack != null) {
-            installFlow.offer(pack, thenRecognize = true)
+            installFlow.offer(listOf(pack), AfterInstall.Recognize)
             return
         }
 
         workJob = launchExclusive(Activity.Recognizing) { read(image) }
+    }
+
+    /**
+     * Translates the current result into the chosen target (also after the target was changed on the Result screen);
+     * offers the download of the models of the route first, with their total size.
+     */
+    fun translate() {
+        val result = state.value.result
+        val target = state.value.target
+        if (result == null || target == null || !state.value.canTranslate) {
+            return
+        }
+
+        workJob = launchExclusive(Activity.Translating) { translateResult(result, target) }
     }
 
     /** Offers the download of [pack] from the settings screen; nothing is recognised afterwards. */
@@ -89,7 +113,7 @@ class AppController(
             return
         }
 
-        installFlow.offer(pack, thenRecognize = false)
+        installFlow.offer(listOf(pack), AfterInstall.Nothing)
     }
 
     /** The user agreed to the download of the offered pack (or asked to retry a failed one). */
@@ -101,13 +125,24 @@ class AppController(
 
         workJob =
             launchExclusive(Activity.Installing) {
-                val installed = installFlow.run(prompt)
-                val image = state.value.image
-                if (installed && prompt.thenRecognize && image != null) {
-                    mutableState.update { it.copy(activity = Activity.Recognizing) }
-                    read(image)
+                if (installFlow.run(prompt)) {
+                    continueAfterInstall(prompt.then)
                 }
             }
+    }
+
+    private suspend fun continueAfterInstall(then: AfterInstall) {
+        val image = state.value.image
+        val result = state.value.result
+        val target = state.value.target
+        if (then == AfterInstall.Recognize && image != null) {
+            mutableState.update { it.copy(activity = Activity.Recognizing) }
+            read(image)
+        }
+
+        if (then == AfterInstall.Translate && result != null && target != null) {
+            runTranslation(result, target)
+        }
     }
 
     /** Closes the download dialog; a running download is cancelled and its partial file removed. */
@@ -120,18 +155,20 @@ class AppController(
     }
 
     /**
-     * Cancels a running download or recognition. A recognition is shown as cancelled and the screen is free at once
-     * ([Activity.Cancelling]); the engine needs a moment to leave its current native step, and whatever starts next waits
-     * for it ([stopping]), so two reads never run side by side.
+     * Cancels a running download, recognition or translation. A recognition or translation is shown as cancelled and the
+     * screen is free at once ([Activity.Cancelling]); the engine needs a moment to leave its current native step, and
+     * whatever starts next waits for it ([stopping]), so two engine runs never go side by side. A cancelled translation
+     * leaves the recognised text on the screen.
      */
     fun cancelRecognition() {
         val activity = state.value.activity
-        if (activity == Activity.Recognizing) {
+        val engineRuns = activity == Activity.Recognizing || activity == Activity.Translating
+        if (engineRuns) {
             stopping = stoppedAfter(stopping, workJob)
             mutableState.update { it.copy(activity = Activity.Cancelling) }
         }
 
-        if (activity == Activity.Recognizing || activity == Activity.Installing) {
+        if (engineRuns || activity == Activity.Installing) {
             workJob?.cancel()
         }
     }
@@ -184,7 +221,7 @@ class AppController(
     fun handleBack() {
         when {
             state.value.installPrompt != null -> dismissInstall()
-            state.value.activity == Activity.Recognizing -> cancelRecognition()
+            state.value.activity == Activity.Recognizing || state.value.activity == Activity.Translating -> cancelRecognition()
             else -> back()
         }
     }
@@ -204,6 +241,12 @@ class AppController(
         persistSettings()
     }
 
+    /** Also preselects the target on the Home screen, so the change is visible at once; null means "do not translate". */
+    fun setDefaultTarget(target: Language?) {
+        mutableState.update { it.copy(settings = it.settings.copy(defaultTarget = target), target = target) }
+        persistSettings()
+    }
+
     /** Applies the stored settings, unless the user has already changed one while they were being read. */
     private suspend fun loadSettings() {
         val loaded = settingsStore.load()
@@ -211,7 +254,11 @@ class AppController(
             if (settingsChanged) {
                 current
             } else {
-                current.copy(settings = loaded, language = current.language ?: loaded.defaultLanguage)
+                current.copy(
+                    settings = loaded,
+                    language = current.language ?: loaded.defaultLanguage,
+                    target = current.target ?: loaded.defaultTarget,
+                )
             }
         }
     }
@@ -231,7 +278,41 @@ class AppController(
 
     private suspend fun read(image: ImageInput) {
         when (val outcome = engine.recognize(image, state.value.language)) {
-            is Outcome.Success -> showResult(outcome.value)
+            is Outcome.Success -> readSucceeded(outcome.value)
+            is Outcome.Failure -> showNotice(outcome.message, isError = true)
+        }
+    }
+
+    /** Shows the text, then translates it when a target is chosen and the engine trusts what it read. */
+    private suspend fun readSucceeded(result: RecognitionResult) {
+        showResult(result)
+        val target = state.value.target
+        if (target != null && !result.lowQuality) {
+            translateResult(result, target)
+        }
+    }
+
+    /** Translates [result] into [target]: says so when nothing is to do, offers the missing models, else runs the route. */
+    private suspend fun translateResult(result: RecognitionResult, target: Language) {
+        if (result.language == target) {
+            showNotice("The text is already in ${target.displayName}.", isError = false)
+            return
+        }
+
+        val missing = installFlow.packsNeededForTranslation(result.language, target)
+        when {
+            missing == null ->
+                showNotice("There is no translation from ${result.language.displayName} to ${target.displayName}.", isError = true)
+
+            missing.isNotEmpty() -> installFlow.offer(missing, AfterInstall.Translate)
+            else -> runTranslation(result, target)
+        }
+    }
+
+    private suspend fun runTranslation(result: RecognitionResult, target: Language) {
+        mutableState.update { it.copy(activity = Activity.Translating, translation = null) }
+        when (val outcome = translator.translate(result.text, result.language, target)) {
+            is Outcome.Success -> mutableState.update { it.copy(translation = outcome.value) }
             is Outcome.Failure -> showNotice(outcome.message, isError = true)
         }
     }
@@ -242,7 +323,7 @@ class AppController(
             return
         }
 
-        mutableState.update { it.copy(image = image, result = null) }
+        mutableState.update { it.copy(image = image, result = null, translation = null) }
     }
 
     private fun navigateTo(screen: Screen) {
@@ -256,7 +337,7 @@ class AppController(
     }
 
     private fun showResult(result: RecognitionResult) {
-        mutableState.update { it.copy(result = result, backStack = it.backStack + Screen.Result) }
+        mutableState.update { it.copy(result = result, translation = null, backStack = it.backStack + Screen.Result) }
     }
 
     private fun confirmSaved(saved: Boolean) {

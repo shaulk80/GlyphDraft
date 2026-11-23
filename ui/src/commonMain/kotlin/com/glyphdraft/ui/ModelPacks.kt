@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.glyphdraft.core.InstallProgress
 import com.glyphdraft.core.ModelPack
 import com.glyphdraft.ui.state.AppController
+import com.glyphdraft.ui.state.AfterInstall
 import com.glyphdraft.ui.state.AppState
 import com.glyphdraft.ui.state.InstallPrompt
 
@@ -57,9 +58,21 @@ fun InstallDialog(state: AppState, controller: AppController) {
 private fun titleOf(prompt: InstallPrompt): String =
     when {
         prompt.error != null -> "Download failed"
-        prompt.running -> "Downloading ${prompt.pack.displayName}"
+        prompt.running -> "Downloading ${namesOf(prompt)}"
         else -> "Download language models?"
     }
+
+private fun namesOf(prompt: InstallPrompt): String = prompt.packs.joinToString { it.displayName }
+
+private fun offerOf(prompt: InstallPrompt): String {
+    val size = megabytes(prompt.totalBytes)
+    if (prompt.then == AfterInstall.Translate) {
+        return "Translating needs ${namesOf(prompt)}: $size, downloaded once."
+    }
+
+    val pack = prompt.packs.first()
+    return "Reading ${languagesOf(pack)} needs the ${pack.displayName} models: $size, downloaded once."
+}
 
 @Composable
 private fun InstallDialogBody(prompt: InstallPrompt) {
@@ -68,7 +81,7 @@ private fun InstallDialogBody(prompt: InstallPrompt) {
             prompt.error != null -> Text(prompt.error)
             prompt.running -> DownloadProgress(prompt.progress)
             else -> {
-                Text("Reading ${languagesOf(prompt.pack)} needs the ${prompt.pack.displayName} models: ${megabytes(prompt.pack.sizeBytes)}, downloaded once.")
+                Text(offerOf(prompt))
                 Text("Afterwards it works offline. Images never leave this device.")
             }
         }
