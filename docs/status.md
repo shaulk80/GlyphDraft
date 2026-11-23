@@ -1,6 +1,6 @@
 # GlyphDraft: status
 
-Updated: 2026-11-22. Keep this file under 3 KB. History belongs in git, pull requests and the Releases page, not here.
+Updated: 2026-11-23. Keep this file under 3 KB. History belongs in git, pull requests and the Releases page, not here.
 
 ## Now
 
@@ -9,7 +9,7 @@ M0, M1 and M2 are done. `v0.1.0` (text from an image: PP-OCRv5 on ONNX Runtime, 
 ## Next
 
 - Issues from the hand test: #28 and #29 are closed (#28: the sort order of the Android file dialog is a platform limit, in the README under Known issues); #30 (Linux window icon) is parked until seen on a native Linux desktop.
-- Next milestone: M3, translation. Planned 2026-11-23 in `docs/plan.md` (11 tasks). Owner decided: M3 before the open issues, weak directions marked experimental, Hebrew included. Task 1 (spike) done, `docs/spikes/m3-translation.md`, decision 0012 accepted (size ceiling about 115 MB per direction): OPUS-MT int8 on ONNX Runtime with an own Kotlin tokenizer (chrF 70 to 86 for de, fr, es, ru; about 110 MB per direction); English and Russian as hubs (Russian for Hebrew); no model for Japanese as a target; Hebrew exports come from one private uploader and two are broken. Task 2 done (decision 0013): `Translator`, `Translation`, `TranslationDirection`, a translation model is a `ModelPack` with a direction, `Settings.defaultTarget`, `StubTranslator`; not wired into the apps yet. Task 3 done: `TextSegmenter` (paragraphs, wrapped lines, sentences, length limit) and `UnigramTokenizer` in shared `engine` code; its ids match the spike tokenizer on 15 of 16 local models, `he-en` differs only in the end id (its EOS is 25568, not 0; read it from the vocabulary, tasks 5 and 6). Next: task 4, direction manifest and routes.
+- Next milestone: M3, translation. Planned 2026-11-23 in `docs/plan.md` (11 tasks). Owner decided: M3 before the open issues, weak directions marked experimental, Hebrew included. Task 1 (spike) done, `docs/spikes/m3-translation.md`, decision 0012 accepted (size ceiling about 115 MB per direction): OPUS-MT int8 on ONNX Runtime with an own Kotlin tokenizer (chrF 70 to 86 for de, fr, es, ru; about 110 MB per direction); English and Russian as hubs (Russian for Hebrew); no model for Japanese as a target; Hebrew exports come from one private uploader and two are broken. Task 2 done (decision 0013): `Translator`, `Translation`, `TranslationDirection`, a translation model is a `ModelPack` with a direction, `Settings.defaultTarget`, `StubTranslator`; not wired into the apps yet. Task 3 done: `TextSegmenter` (paragraphs, wrapped lines, sentences, length limit) and `UnigramTokenizer` in shared `engine` code; its ids match the spike tokenizer on 15 of 16 local models, `he-en` differs only in the end id (its EOS is 25568, not 0; read it from the vocabulary, tasks 5 and 6). Task 4 done (decision 0014): `TranslationManifest` pins 13 directions (65 files, 113 to 149 MB each, `he-en` 370 MB; Xenova repos, Hebrew from one uploader, not mirrored yet), `TranslationRoutes` in `core` plans the chain of models for a pair. Next: task 5, the translator.
 
 ## Open
 
