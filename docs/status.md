@@ -1,6 +1,6 @@
 # GlyphDraft: status
 
-Updated: 2026-11-23. Keep this file under 3 KB. History belongs in git, pull requests and the Releases page, not here.
+Updated: 2026-11-24. Keep this file under 3 KB. History belongs in git, pull requests and the Releases page, not here.
 
 ## Now
 
@@ -9,7 +9,7 @@ M0, M1 and M2 are done. `v0.1.0` (text from an image: PP-OCRv5 on ONNX Runtime, 
 ## Next
 
 - Issues from the hand test: #28 and #29 are closed (#28: the sort order of the Android file dialog is a platform limit, in the README under Known issues); #30 (Linux window icon) is parked until seen on a native Linux desktop.
-- Next milestone: M3, translation (`docs/plan.md`, 11 tasks; owner decided: M3 before the open issues, weak directions experimental, Hebrew included). OPUS-MT int8 on ONNX Runtime with an own Kotlin tokenizer (decision 0012, `docs/spikes/m3-translation.md`); English and Russian are hubs. Done: tasks 1 to 4 (spike, types in `core`, segmenter and tokenizer, manifest of 13 directions and routes; the Hebrew files are not mirrored, by choice) and task 5 (decision 0015): `OnDeviceTranslator` runs a route one direction at a time, greedy decoding, not wired into the apps yet. With the real models all 13 directions and 4 pivot pairs match the spike chrF; `he to en` is 78.9, not 82.5 (the spike used a wrong end id). Also fixed: the OCR engine counted installed translation packs as reading packs. Task 6 (decision 0016): six more Hebrew exports of the uploader are broken and the seventh (he to de) is worse than the route through English, so no direction was added; every Hebrew pair is measured through the hubs (chrF 62 to 79). The owner read the Hebrew outputs (`docs/manual/m3-hebrew-read.md`): fine for everyday use, not for sensitive text, so the experimental mark stays; no mirror, no own export. Task 7 (decision 0017): `OnDeviceEngine` exposes the translator, the catalog holds the 13 translation packs (they show in the Settings model list), a device with only translation packs is still offered a reading pack; measured on the emulator (peak 709 MB, 954 characters en to de in 15 s). Task 8 (decision 0018): `AppController` takes the translator; target language, `translate()`, route models offered after the read with the total size, cancel; no screens for it yet (task 9: target picker, toggle, progress, marks). Next: task 9.
+- Next milestone: M3, translation (`docs/plan.md`, 11 tasks; owner decided: M3 before the open issues, weak directions experimental, Hebrew included). OPUS-MT int8 on ONNX Runtime with an own Kotlin tokenizer (decision 0012, `docs/spikes/m3-translation.md`); English and Russian are hubs. Done: tasks 1 to 8 (types, tokenizer, manifest of 13 directions and routes, `OnDeviceTranslator` with all directions matching the spike chrF, Hebrew measured through the hubs and kept experimental, engine wiring measured on the emulator, `AppController` translation flow). Task 9 (decision 0019): target picker on Home and in Settings with route marks (via, download needed, experimental), translation and original switch on Result, progress and Cancel, copy and save of what is shown. Next: task 10 (end-to-end test, README with CC-BY credits, `docs/manual/m3.md`).
 
 ## Open
 

@@ -180,15 +180,18 @@ class AppController(
             cancelled?.join()
         }
 
-    fun saveResult() {
+    /** Saves the recognised text, or the translation when [translated] is set and there is one (`scan.de.txt`). */
+    fun saveResult(translated: Boolean = false) {
         val result = state.value.result
         val imageName = state.value.image?.name
         if (result == null || imageName == null) {
             return
         }
 
+        val translation = state.value.translation.takeIf { translated }
+        val text = translation?.text ?: result.text
         launchExclusive(Activity.Saving) {
-            when (val outcome = saver.save(suggestedFileName(imageName), result.text)) {
+            when (val outcome = saver.save(suggestedFileName(imageName, translation?.to), text)) {
                 is Outcome.Success -> confirmSaved(outcome.value)
                 is Outcome.Failure -> showNotice(outcome.message, isError = true)
             }
@@ -374,5 +377,8 @@ class AppController(
         }
     }
 
-    private fun suggestedFileName(imageName: String): String = imageName.substringBeforeLast('.') + ".txt"
+    private fun suggestedFileName(imageName: String, language: Language?): String {
+        val suffix = language?.let { ".${it.code}" }.orEmpty()
+        return imageName.substringBeforeLast('.') + suffix + ".txt"
+    }
 }

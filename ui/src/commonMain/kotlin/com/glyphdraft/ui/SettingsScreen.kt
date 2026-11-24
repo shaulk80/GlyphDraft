@@ -17,7 +17,7 @@ import com.glyphdraft.ui.state.AppController
 import com.glyphdraft.ui.state.AppState
 import com.glyphdraft.core.ThemeMode
 
-/** Theme, default language, the language models and where recognition runs. */
+/** Theme, default language and translation, the language models and where recognition runs. */
 @Composable
 fun SettingsScreen(state: AppState, controller: AppController, version: String) {
     CenteredColumn {
@@ -36,12 +36,32 @@ fun SettingsScreen(state: AppState, controller: AppController, version: String) 
                 onSelected = controller::setDefaultLanguage,
             )
         }
+        DefaultTargetSection(state, controller)
         ModelPackSection(state, controller)
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("Engine", style = MaterialTheme.typography.titleMedium)
             Text("On this device. Images are never uploaded; only the language models are downloaded, once.")
         }
         Text("GlyphDraft $version", style = MaterialTheme.typography.bodySmall)
+    }
+}
+
+/** Shown when the models can translate at all; changing it also preselects the target on the Home screen. */
+@Composable
+private fun DefaultTargetSection(state: AppState, controller: AppController) {
+    if (state.targets.isEmpty()) {
+        return
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Default translation", style = MaterialTheme.typography.titleMedium)
+        TargetDropdown(
+            selected = state.settings.defaultTarget,
+            source = null,
+            state = state,
+            enabled = true,
+            onSelected = controller::setDefaultTarget,
+        )
     }
 }
 

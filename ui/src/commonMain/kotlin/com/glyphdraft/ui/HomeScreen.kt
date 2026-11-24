@@ -32,12 +32,14 @@ fun HomeScreen(state: AppState, controller: AppController) {
                     ImageCard(state, controller, Modifier.weight(1f))
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         LanguageSection(state, controller)
+                        TargetSection(state, controller)
                         RecognizeSection(state, controller)
                     }
                 }
             } else {
                 ImageCard(state, controller, Modifier.fillMaxWidth())
                 LanguageSection(state, controller)
+                TargetSection(state, controller)
                 RecognizeSection(state, controller)
             }
         }
@@ -65,10 +67,38 @@ private fun LanguageSection(state: AppState, controller: AppController) {
     }
 }
 
+/** The language to translate into, or "Don't translate"; shown when the models can translate at all. */
+@Composable
+private fun TargetSection(state: AppState, controller: AppController) {
+    if (state.targets.isEmpty()) {
+        return
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("3. Translate into", style = MaterialTheme.typography.titleMedium)
+        TargetDropdown(
+            selected = state.target,
+            source = state.language,
+            state = state,
+            enabled = !state.busy,
+            onSelected = controller::selectTarget,
+        )
+        Text(targetNote(state), style = MaterialTheme.typography.bodySmall)
+    }
+}
+
+private fun targetNote(state: AppState): String =
+    when {
+        state.target == null -> "The text is only read, not translated."
+        state.target == state.language -> "The text is already in ${state.target.displayName}, so it will not be translated."
+        state.language == null -> "The route and the models it needs are shown after the text is read."
+        else -> "Translated on this device; models are downloaded once."
+    }
+
 @Composable
 private fun RecognizeSection(state: AppState, controller: AppController) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("3. Read the text", style = MaterialTheme.typography.titleMedium)
+        Text("${if (state.targets.isEmpty()) 3 else 4}. Read the text", style = MaterialTheme.typography.titleMedium)
         if (state.activity == Activity.Recognizing) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 CircularProgressIndicator()
