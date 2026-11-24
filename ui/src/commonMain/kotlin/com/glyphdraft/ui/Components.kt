@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.glyphdraft.core.Language
 import com.glyphdraft.ui.state.AppState
 import com.glyphdraft.ui.state.Notice
+import com.glyphdraft.ui.state.targetLabel
 
 /** Widest the content grows; on a wide window it stays readable and centred. */
 val ContentMaxWidth: Dp = 720.dp
@@ -35,24 +36,24 @@ val ContentMaxWidth: Dp = 720.dp
 val WideLayoutMinWidth: Dp = 600.dp
 
 const val AUTO_DETECT_LABEL = "Auto-detect"
+const val NO_TRANSLATION_LABEL = "Don't translate"
 
-/** Dropdown over the languages of the model catalog ([AppState.languages]) plus "Auto-detect" (null). */
+/** A button that opens a menu of [options]; [labelOf] names an option, also the selected one on the button. */
 @Composable
-fun LanguageDropdown(
-    selected: Language?,
-    state: AppState,
+private fun <T> OptionDropdown(
+    selected: T,
+    options: List<T>,
+    labelOf: (T) -> String,
     enabled: Boolean,
-    onSelected: (Language?) -> Unit,
-    modifier: Modifier = Modifier,
+    onSelected: (T) -> Unit,
+    modifier: Modifier,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val labelOf = { language: Language? -> if (language == null) AUTO_DETECT_LABEL else state.labelOf(language) }
     Box(modifier) {
         OutlinedButton(onClick = { expanded = true }, enabled = enabled, modifier = Modifier.fillMaxWidth()) {
             Text(labelOf(selected))
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            val options: List<Language?> = listOf(null) + state.languages
             for (option in options) {
                 DropdownMenuItem(
                     text = { Text(labelOf(option)) },
@@ -64,6 +65,36 @@ fun LanguageDropdown(
             }
         }
     }
+}
+
+/** Dropdown over the languages of the model catalog ([AppState.languages]) plus "Auto-detect" (null). */
+@Composable
+fun LanguageDropdown(
+    selected: Language?,
+    state: AppState,
+    enabled: Boolean,
+    onSelected: (Language?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val labelOf = { language: Language? -> if (language == null) AUTO_DETECT_LABEL else state.labelOf(language) }
+    OptionDropdown(selected, listOf<Language?>(null) + state.languages, labelOf, enabled, onSelected, modifier)
+}
+
+/**
+ * Dropdown over the languages the models can translate into ([AppState.targets]) plus "Don't translate" (null). With a
+ * known [source] each entry says how that pair is translated (via English, download needed, experimental).
+ */
+@Composable
+fun TargetDropdown(
+    selected: Language?,
+    source: Language?,
+    state: AppState,
+    enabled: Boolean,
+    onSelected: (Language?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val labelOf = { target: Language? -> if (target == null) NO_TRANSLATION_LABEL else state.targetLabel(target, source) }
+    OptionDropdown(selected, listOf<Language?>(null) + state.targets, labelOf, enabled, onSelected, modifier)
 }
 
 /** An error or confirmation shown above the screen content until dismissed or the user navigates. */

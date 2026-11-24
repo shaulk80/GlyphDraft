@@ -289,4 +289,37 @@ class AppControllerTranslationTest {
             assertNull(loaded.state.value.target)
             assertEquals(listOf(Settings()), settingsStore.saves)
         }
+
+    @Test
+    fun saveWritesTheTranslationUnderTheNameOfTheTargetOrTheOriginalWhenAskedFor() =
+        runTest {
+            val controller = controllerWithImage(Language.German)
+            controller.recognize()
+            advanceUntilIdle()
+            val name = photo.name.substringBeforeLast('.')
+
+            controller.saveResult(translated = true)
+            advanceUntilIdle()
+            assertEquals("$name.de.txt", saver.savedName)
+            assertEquals("[de] hello", saver.savedText)
+
+            controller.saveResult()
+            advanceUntilIdle()
+            assertEquals("$name.txt", saver.savedName)
+            assertEquals("hello", saver.savedText)
+        }
+
+    @Test
+    fun saveOfATranslationThatDoesNotExistSavesTheRecognisedText() =
+        runTest {
+            val controller = controllerWithImage(target = null)
+            controller.recognize()
+            advanceUntilIdle()
+
+            controller.saveResult(translated = true)
+            advanceUntilIdle()
+
+            assertEquals("hello", saver.savedText)
+            assertEquals(photo.name.substringBeforeLast('.') + ".txt", saver.savedName)
+        }
 }

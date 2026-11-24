@@ -82,6 +82,9 @@ private fun InstallDialogBody(prompt: InstallPrompt) {
             prompt.running -> DownloadProgress(prompt.progress)
             else -> {
                 Text(offerOf(prompt))
+                if (prompt.packs.any { it.experimental }) {
+                    Text("Part of this translation is experimental: the quality is lower.")
+                }
                 Text("Afterwards it works offline. Images never leave this device.")
             }
         }
@@ -102,6 +105,19 @@ private fun DownloadProgress(progress: InstallProgress?) {
     }
 }
 
+/** Under the name of a pack: what it reads (a translation model reads nothing) and the mark of an experimental one. */
+@Composable
+private fun PackDetail(pack: ModelPack) {
+    val languages = languagesOf(pack)
+    if (languages.isNotEmpty() && languages != pack.displayName) {
+        Text(languages, style = MaterialTheme.typography.bodySmall)
+    }
+
+    if (pack.experimental) {
+        Text("Experimental", style = MaterialTheme.typography.bodySmall)
+    }
+}
+
 /** The settings list of model packs: size, whether installed, and the download button for those that are not. */
 @Composable
 fun ModelPackSection(state: AppState, controller: AppController) {
@@ -115,9 +131,7 @@ fun ModelPackSection(state: AppState, controller: AppController) {
             ) {
                 Column(Modifier.weight(1f)) {
                     Text(pack.displayName)
-                    if (languagesOf(pack) != pack.displayName) {
-                        Text(languagesOf(pack), style = MaterialTheme.typography.bodySmall)
-                    }
+                    PackDetail(pack)
                 }
                 if (state.isInstalled(pack)) {
                     Text("Installed")

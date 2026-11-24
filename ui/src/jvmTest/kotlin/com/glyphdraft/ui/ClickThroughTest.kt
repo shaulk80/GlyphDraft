@@ -25,10 +25,12 @@ import androidx.compose.ui.text.style.ResolvedTextDirection
 import com.glyphdraft.core.ImageInput
 import com.glyphdraft.core.ImagePicker
 import com.glyphdraft.core.Language
+import com.glyphdraft.core.ModelPack
 import com.glyphdraft.core.OcrEngine
 import com.glyphdraft.core.Outcome
 import com.glyphdraft.core.RecognitionResult
 import com.glyphdraft.core.TextSaver
+import com.glyphdraft.core.TranslationDirection
 import com.glyphdraft.core.stub.InMemorySettingsStore
 import com.glyphdraft.core.stub.StubModelCatalog
 import com.glyphdraft.core.stub.StubModelInstaller
@@ -84,6 +86,21 @@ private class StuckEngine : OcrEngine {
         coroutineContext.ensureActive()
         return Outcome.Success(RecognitionResult("never shown", Language.English, detected = true))
     }
+}
+
+private const val MB = 1024L * 1024L
+
+private fun modelOf(from: Language, to: Language, megabytes: Long, experimental: Boolean = false): ModelPack =
+    ModelPack("mt-${from.code}-${to.code}", "${from.displayName} to ${to.displayName}", emptySet(), megabytes * MB, TranslationDirection(from, to), experimental)
+
+private val englishToGerman = modelOf(Language.English, Language.German, 100)
+private val englishToRussian = modelOf(Language.English, Language.Russian, 110)
+private val russianToHebrew = modelOf(Language.Russian, Language.Hebrew, 144, experimental = true)
+
+/** The reading packs plus three translation models; only English to German is installed. */
+private fun translatingCatalog(): StubModelCatalog {
+    val reading = StubModelCatalog.defaultPacks()
+    return StubModelCatalog(reading + listOf(englishToGerman, englishToRussian, russianToHebrew), reading.map { it.id }.toSet() + englishToGerman.id)
 }
 
 /** In-memory clipboard so the test never touches the system clipboard (there may be no display on CI). */
@@ -343,5 +360,106 @@ class ClickThroughTest {
             waitForText("Hebrew")
             assertEquals(ThemeMode.Dark, controller.state.value.settings.theme)
             assertEquals("Hebrew", controller.state.value.language?.displayName)
+        }
+
+    private fun translatingController(translatingCatalog: StubModelCatalog = translatingCatalog()) =
+        AppController(scope, StubOcrEngine(latencyMillis = 0), StubTranslator(latencyMillis = 0), picker, saver, translatingCatalog, StubModelInstaller(translatingCatalog, steps = 2, stepMillis = 0), InMemorySettingsStore())
+
+    @Test
+    fun translateShowsTheTranslationSwitchesToTheOriginalAndCopiesAndSavesWhatIsShown() =
+        runComposeUiTest {
+            showApp(translatingController())
+            click("Choose image…")
+            waitForText("scan.png (3 bytes)")
+            onNodeWithText("The text is only read, not translated.").assertExists()
+
+            click(NO_TRANSLATION_LABEL)
+            click("German")
+            waitForText("The route and the models it needs are shown after the text is read.")
+            click("Recognize text")
+            waitForText("Translated from English to German")
+            onNodeWithText("[de] Sample text from scan.png.", substring = true).assertExists()
+            onNodeWithText(EXPERIMENTAL_HINT).assertDoesNotExist()
+
+            click("Copy")
+            waitForText("Copied to the clipboard.")
+            assertEquals("[de] Sample text from scan.png.", clipboard.text()?.lineSequence()?.first())
+            click("Save as…")
+            waitUntil(timeoutMillis = WAIT_MILLIS) { saver.savedName != null }
+            assertEquals("scan.de.txt", saver.savedName)
+
+            click("Original")
+            waitForText("Sample text from scan.png.", substring = true)
+            onNodeWithText("[de]", substring = true).assertDoesNotExist()
+            click("Copy")
+            waitUntil(timeoutMillis = WAIT_MILLIS) { clipboard.text()?.startsWith("Sample text") == true }
+            click("Save as…")
+            waitUntil(timeoutMillis = WAIT_MILLIS) { saver.savedName == "scan.txt" }
+        }
+
+    @Test
+    fun theTargetPickerNamesTheRouteTheDownloadAndTheExperimentalMarkOnceTheSourceIsKnown() =
+        runComposeUiTest {
+            val catalog = translatingCatalog()
+            showApp(translatingController(catalog))
+            click("Choose image…")
+            waitForText("scan.png (3 bytes)")
+            click("Auto-detect")
+            click("English")
+            click(NO_TRANSLATION_LABEL)
+
+            waitForText("German")
+            waitForText("Russian (download needed)")
+            waitForText("Hebrew (via Russian, download needed, experimental)")
+            click("Hebrew (via Russian, download needed, experimental)")
+            click("Recognize text")
+            waitForText("Download language models?")
+            waitForText("English to Russian, Russian to Hebrew", substring = true)
+            waitForText("Part of this translation is experimental: the quality is lower.")
+
+            click("Download")
+            waitForText("Translated from English to Hebrew, via Russian")
+            waitForText(EXPERIMENTAL_HINT)
+            onNodeWithText("[he] Sample text from scan.png.", substring = true).assertExists()
+        }
+
+    @Test
+    fun anotherTargetOnTheResultScreenIsTranslatedAfterTranslateAndNoneRemovesTheTranslation() =
+        runComposeUiTest {
+            showApp(translatingController())
+            click("Choose image…")
+            waitForText("scan.png (3 bytes)")
+            click("Recognize text")
+            waitForText("Language: English (detected)")
+            onNodeWithText("Original").assertDoesNotExist()
+            onNodeWithText("Translate").assertIsNotEnabled()
+
+            click(NO_TRANSLATION_LABEL)
+            click("German")
+            click("Translate")
+            waitForText("Translated from English to German")
+
+            click("German")
+            click(NO_TRANSLATION_LABEL)
+            waitUntil(timeoutMillis = WAIT_MILLIS) { onAllNodes(hasText("Translated from", substring = true)).fetchSemanticsNodes().isEmpty() }
+            onNodeWithText("Sample text from scan.png.", substring = true).assertExists()
+        }
+
+    @Test
+    fun settingsOffersTheDefaultTargetAndListsTheTranslationModelsWithTheExperimentalMark() =
+        runComposeUiTest {
+            val translating = translatingController()
+            showApp(translating)
+
+            click("Settings")
+            waitForText("Default translation")
+            click(NO_TRANSLATION_LABEL)
+            click("Russian")
+            assertEquals(Language.Russian, translating.state.value.settings.defaultTarget)
+            waitForText("Russian to Hebrew")
+            waitForText("Experimental")
+            click("← Back")
+            waitForText("Russian")
+            assertEquals(Language.Russian, translating.state.value.target)
         }
 }

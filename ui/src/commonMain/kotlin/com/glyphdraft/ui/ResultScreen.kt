@@ -14,6 +14,10 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -44,26 +48,34 @@ fun ResultScreen(state: AppState, controller: AppController) {
 private fun ResultContent(result: RecognitionResult, state: AppState, controller: AppController) {
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
+    val translation = state.translation
+    var showOriginal by remember(translation) { mutableStateOf(false) }
+    val shownTranslation = translation.takeIf { !showOriginal }
+    val shownText = shownTranslation?.text ?: result.text
 
     Text(languageLine(result), style = MaterialTheme.typography.titleMedium)
     if (result.lowQuality) {
         LowQualityHint()
+    }
+    TranslationControls(result, state, controller)
+    if (translation != null) {
+        TranslationHeader(translation, state, showOriginal, onShowOriginal = { showOriginal = it })
     }
     Surface(
         tonalElevation = 2.dp,
         shape = MaterialTheme.shapes.medium,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        ResultText(result.text, Modifier.padding(16.dp))
+        ResultText(shownText, Modifier.padding(16.dp))
     }
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Button(onClick = {
             scope.launch {
-                clipboard.setClipEntry(plainTextClipEntry(result.text))
+                clipboard.setClipEntry(plainTextClipEntry(shownText))
                 controller.showCopied()
             }
         }) { Text("Copy") }
-        OutlinedButton(onClick = controller::saveResult, enabled = !state.busy) { Text("Save as…") }
+        OutlinedButton(onClick = { controller.saveResult(translated = shownTranslation != null) }, enabled = !state.busy) { Text("Save as…") }
     }
 }
 
