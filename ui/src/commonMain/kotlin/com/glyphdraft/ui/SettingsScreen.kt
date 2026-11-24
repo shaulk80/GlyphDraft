@@ -42,9 +42,31 @@ fun SettingsScreen(state: AppState, controller: AppController, version: String) 
             Text("Engine", style = MaterialTheme.typography.titleMedium)
             Text("On this device. Images are never uploaded; only the language models are downloaded, once.")
         }
+        CreditsSection(state)
         Text("GlyphDraft $version", style = MaterialTheme.typography.bodySmall)
     }
 }
+
+/** The CC-BY 4.0 attribution for the translation models; shown when the models can translate at all (the README has the same words). */
+@Composable
+private fun CreditsSection(state: AppState) {
+    if (state.targets.isEmpty()) {
+        return
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text("Credits", style = MaterialTheme.typography.titleMedium)
+        Text(TRANSLATION_CREDITS)
+    }
+}
+
+/**
+ * Translation models are OPUS-MT models by the Helsinki-NLP group (CC-BY 4.0 or Apache 2.0, treated as CC-BY 4.0), converted
+ * to ONNX by Xenova and, for the two Hebrew ones, by a community uploader (decisions 0012 and 0016).
+ */
+internal const val TRANSLATION_CREDITS =
+    "Translation uses OPUS-MT models by Helsinki-NLP (University of Helsinki), licensed CC-BY 4.0, " +
+        "converted to ONNX by Xenova and, for the Hebrew models, by R4kSo1997. Changes: int8 quantization and conversion only."
 
 /** Shown when the models can translate at all; changing it also preselects the target on the Home screen. */
 @Composable

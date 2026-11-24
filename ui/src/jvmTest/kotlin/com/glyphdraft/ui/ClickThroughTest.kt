@@ -462,4 +462,23 @@ class ClickThroughTest {
             waitForText("Russian")
             assertEquals(Language.Russian, translating.state.value.target)
         }
+
+    @Test
+    fun settingsCreditsTheTranslationModelsOnlyWhenTheyCanTranslate() =
+        runComposeUiTest {
+            showApp(translatingController())
+            click("Settings")
+            waitForText("Credits")
+            onNodeWithText("Helsinki-NLP", substring = true).assertExists()
+            onNodeWithText("CC-BY 4.0", substring = true).assertExists()
+        }
+
+    @Test
+    fun settingsWithoutTranslationModelsHasNoCredits() =
+        runComposeUiTest {
+            showApp()
+            click("Settings")
+            waitForText("Language models")
+            onNodeWithText("Credits").assertDoesNotExist()
+        }
 }
