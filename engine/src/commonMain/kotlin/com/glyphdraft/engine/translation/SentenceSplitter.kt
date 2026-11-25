@@ -44,6 +44,17 @@ internal object SentenceSplitter {
         return sentences
     }
 
+    /** Whether a sentence ends with [line] when [next] comes after it. */
+    fun isSentenceEnd(line: String, next: String): Boolean {
+        val unclosed = line.trimEnd { it in CLOSERS }
+        val terminators = unclosed.indexOfLast { !isTerminator(it) } + 1
+        if (terminators == unclosed.length) {
+            return false
+        }
+
+        return endsSentence("$line $next", terminators, line.length)
+    }
+
     private fun isTerminator(character: Char): Boolean = character in TERMINATORS || character in CJK_TERMINATORS
 
     /** Index after the terminators that begin at [from] and the closing quotes and brackets that follow them. */

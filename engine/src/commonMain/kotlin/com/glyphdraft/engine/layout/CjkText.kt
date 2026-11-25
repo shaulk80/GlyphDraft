@@ -1,4 +1,4 @@
-package com.glyphdraft.engine.translation
+package com.glyphdraft.engine.layout
 
 /** Chinese and Japanese text has no spaces between words, so joining and splitting it differs from the other scripts. */
 internal object CjkText {

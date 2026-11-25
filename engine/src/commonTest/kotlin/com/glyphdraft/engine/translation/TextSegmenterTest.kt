@@ -50,28 +50,25 @@ class TextSegmenterTest {
     }
 
     @Test
-    fun joinsWrappedLinesIntoRunningText() {
+    fun everyLineBreakEndsASentence() {
         val cases: List<Pair<String, List<String>>> =
             listOf(
-                "The line wraps\nin the middle of a sentence." to listOf("The line wraps in the middle of a sentence."),
-                "A sentence\r\nwith Windows breaks." to listOf("A sentence with Windows breaks."),
-                "  indented  \n  lines  " to listOf("indented lines"),
-                "The infor-\nmation is here." to listOf("The information is here."),
-                "A well-\nKnown name." to listOf("A well- Known name."),
-                "日本語の\nテキスト。" to listOf("日本語のテキスト。"),
-                "This ends.\nThis starts." to listOf("This ends.", "This starts."),
+                "Item list\nBox 07" to listOf("Item list", "Box 07"),
+                "A line\r\nwith a Windows break" to listOf("A line", "with a Windows break"),
+                "  indented  \n  lines  " to listOf("indented", "lines"),
+                "This ends. This too.\nThis starts." to listOf("This ends.", "This too.", "This starts."),
             )
 
         assertSentences(cases)
     }
 
     @Test
-    fun paragraphsKeepTheirBlankLine() {
+    fun linesAndParagraphsComeBackAsTheyWere() {
         val cases: List<Pair<String, String>> =
             listOf(
                 "First one.\n\nSecond one." to "First one.\n\nSecond one.",
                 "First one.\n\n\n\nSecond one." to "First one.\n\nSecond one.",
-                "First\nparagraph.\n \nSecond paragraph." to "First paragraph.\n\nSecond paragraph.",
+                "Title\nBox 07 3 kg\nBox 12 11.5 kg\n \nThe end." to "Title\nBox 07 3 kg\nBox 12 11.5 kg\n\nThe end.",
                 "\n\nLeading and trailing.\n\n" to "Leading and trailing.",
             )
 
@@ -117,6 +114,25 @@ class TextSegmenterTest {
 
         assertEquals("😀".repeat(40), parts.joinToString(""))
         assertTrue(parts.all { it.length <= 20 })
+    }
+
+    @Test
+    fun aSentenceEndAtTheEndOfALineIsToldAsInsideALine() {
+        val cases: List<Triple<String, String, Boolean>> =
+            listOf(
+                Triple("It ends.", "Next", true),
+                Triple("He asked \"Why?\"", "Next", true),
+                Triple("他走了。", "下一个", true),
+                Triple("It goes on", "Next", false),
+                Triple("Written by Dr.", "Ortiz", false),
+                Triple("Am 3.", "Mai", false),
+                Triple("It goes on, etc.", "and so on", false),
+                Triple("\"", "Next", false),
+            )
+
+        for ((line, next, expected) in cases) {
+            assertEquals(expected, SentenceSplitter.isSentenceEnd(line, next), "'$line' + '$next'")
+        }
     }
 
     private fun assertSentences(cases: List<Pair<String, List<String>>>) {

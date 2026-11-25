@@ -9,18 +9,21 @@ object ReadingOrder {
      * counts, so a tall box does not swallow its neighbours). Rows are found from the top down, so a skewed page whose
      * lines drift is still cut into its lines, as long as the drift within one row stays small.
      */
-    fun rows(boxes: List<TextBox>): List<List<TextBox>> {
-        val rows = ArrayList<MutableList<TextBox>>()
-        for (box in boxes.sortedBy { it.cy }) {
+    fun rows(boxes: List<TextBox>): List<List<TextBox>> = rows(boxes) { it }
+
+    /** The same for [items] that each lie in the box [boxOf] gives. */
+    fun <T> rows(items: List<T>, boxOf: (T) -> TextBox): List<List<T>> {
+        val rows = ArrayList<MutableList<T>>()
+        for (item in items.sortedBy { boxOf(it).cy }) {
             val row = rows.lastOrNull()
-            if (row != null && sameRow(row, box)) {
-                row.add(box)
+            if (row != null && sameRow(row.map(boxOf), boxOf(item))) {
+                row.add(item)
             } else {
-                rows.add(mutableListOf(box))
+                rows.add(mutableListOf(item))
             }
         }
 
-        return rows.map { row -> row.sortedBy { it.cx } }
+        return rows.map { row -> row.sortedBy { boxOf(it).cx } }
     }
 
     private fun sameRow(row: List<TextBox>, box: TextBox): Boolean {

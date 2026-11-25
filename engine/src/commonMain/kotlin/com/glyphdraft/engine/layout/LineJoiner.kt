@@ -1,8 +1,8 @@
-package com.glyphdraft.engine.translation
+package com.glyphdraft.engine.layout
 
 /**
- * Joins the lines of one OCR paragraph into running text. OCR cuts text where the page does, so a line break inside a
- * paragraph is not a sentence boundary and must not reach the translator.
+ * Joins the lines that the page wrapped into running text. OCR cuts text where the page does, so such a line break is
+ * not a sentence boundary and must not reach the translator ([PageLayout] tells which breaks these are).
  */
 internal object LineJoiner {
     private const val SOFT_HYPHEN = '­'

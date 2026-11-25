@@ -23,7 +23,7 @@ fun interface DirectionSource {
 /**
  * The on-device [Translator] (decision 0015): cuts the text into sentences, runs them through the models of the route
  * one direction after the other (de to he = de to en, en to ru, ru to he) and puts the translated sentences back into
- * the paragraphs of the original.
+ * the lines and paragraphs of the text.
  *
  * At most one direction is open at a time: a model takes about 500 MB while loaded, so the previous direction is closed
  * before the next one is opened, and the last one stays open for the next call (the same direction again costs no load).
