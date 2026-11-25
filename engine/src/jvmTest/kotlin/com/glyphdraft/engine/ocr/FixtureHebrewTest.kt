@@ -32,7 +32,8 @@ class FixtureHebrewTest {
     private fun checkHebrew(reader: HebrewReader): List<String> {
         val page = TestModels.decodeFixture("he-clean")
         val confidence = (runBlocking { reader.probe(page) } as? Outcome.Success)?.value
-        val text = (runBlocking { reader.read(page) } as? Outcome.Success)?.value
+        val lines = (runBlocking { reader.read(page) } as? Outcome.Success)?.value
+        val text = lines?.joinToString("\n") { it.text }
         println("he-clean: confidence $confidence, read: $text")
 
         val problems = ArrayList<String>()

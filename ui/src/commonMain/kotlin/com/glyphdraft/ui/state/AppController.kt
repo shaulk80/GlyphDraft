@@ -314,7 +314,7 @@ class AppController(
 
     private suspend fun runTranslation(result: RecognitionResult, target: Language) {
         mutableState.update { it.copy(activity = Activity.Translating, translation = null) }
-        when (val outcome = translator.translate(result.text, result.language, target)) {
+        when (val outcome = translator.translate(result.runningText, result.language, target)) {
             is Outcome.Success -> mutableState.update { it.copy(translation = outcome.value) }
             is Outcome.Failure -> showNotice(outcome.message, isError = true)
         }

@@ -135,6 +135,11 @@ class FixtureEngineTest {
             problems.add("$label: the text has an empty line: ${result.text.replace("\n", "<LF>")}")
         }
 
+        // No fixture has a wrapped line: each is meant to end where it does.
+        if (result.runningText != result.text) {
+            problems.add("$label: lines were joined: ${result.runningText.replace("\n", "<LF>")}")
+        }
+
         if (result.detected != (hint == null)) {
             problems.add("$label: detected flag is ${result.detected}")
         }

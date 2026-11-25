@@ -66,6 +66,33 @@ class OnDeviceOcrEngineTest {
         }
 
     @Test
+    fun theResultHoldsTheLinesOfThePageAndTheRunningText() =
+        runTest {
+            // Two long lines close together that the page wrapped, and a third one after a gap.
+            val page = listOf(lineBox(20.0, 380.0), lineBox(50.0, 380.0), lineBox(140.0, 380.0))
+            val s = setup(setOf(ModelManifest.LATIN), mapOf(ModelManifest.LATIN to FakeRecognizer("the line goes on", 0.9f)), boxes = page)
+
+            for (hint in listOf(Language.English, null)) {
+                val result = success(s.engine.recognize(input, hint))
+
+                assertEquals("the line goes on\nthe line goes on\n\nthe line goes on", result.text, "hint $hint")
+                assertEquals("the line goes on the line goes on\n\nthe line goes on", result.runningText, "hint $hint")
+            }
+        }
+
+    @Test
+    fun theHebrewLinesAreLaidOutToo() =
+        runTest {
+            val hebrew = FakeHebrewReader(Outcome.Success(0.95f), "כותרת\nשורה")
+            val s = setup(setOf(ModelManifest.HEBREW), emptyMap(), hebrew = hebrew)
+
+            val result = success(s.engine.recognize(input, null))
+
+            assertEquals("כותרת\nשורה", result.text)
+            assertEquals("כותרת\nשורה", result.runningText)
+        }
+
+    @Test
     fun anInstalledTranslationModelIsNotAReadingPack() =
         runTest {
             val translation = ModelPack("mt-en-de", "English to German", emptySet(), 1, TranslationDirection(Language.English, Language.German))

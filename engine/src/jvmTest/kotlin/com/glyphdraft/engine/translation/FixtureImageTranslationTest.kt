@@ -89,7 +89,7 @@ class FixtureImageTranslationTest {
             return listOf("${case.label}: the engine found ${recognition.language.code}, not ${case.from.code}")
         }
 
-        val translated = runBlocking { engine.translator.translate(recognition.text, recognition.language, case.to) }
+        val translated = runBlocking { engine.translator.translate(recognition.runningText, recognition.language, case.to) }
         val expected = runBlocking { engine.translator.translate(TestModels.expectedText(case.fixture).trim(), case.from, case.to) }
         if (translated !is Outcome.Success || expected !is Outcome.Success) {
             return listOf("${case.label}: translation failed: $translated / $expected")

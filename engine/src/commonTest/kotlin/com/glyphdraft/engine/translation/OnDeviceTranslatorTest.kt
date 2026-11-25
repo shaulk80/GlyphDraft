@@ -70,10 +70,10 @@ class OnDeviceTranslatorTest {
     }
 
     @Test
-    fun paragraphsAndSentencesComeBackInTheLayoutOfTheOriginal() = runTest {
-        val translation = success("First one. Second one.\nstill the second.\n\n\nThird one.", en, de)
+    fun linesAndParagraphsComeBackInTheLayoutOfTheText() = runTest {
+        val translation = success("First one. Second one.\nA line of its own\n\n\nThird one.", en, de)
 
-        assertEquals("First one.[de] Second one. still the second.[de]\n\nThird one.[de]", translation.text)
+        assertEquals("First one.[de] Second one.[de]\nA line of its own[de]\n\nThird one.[de]", translation.text)
     }
 
     @Test

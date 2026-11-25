@@ -1,6 +1,7 @@
 package com.glyphdraft.engine.ocr
 
 import com.glyphdraft.core.Outcome
+import com.glyphdraft.engine.layout.PlacedLine
 
 /** Fakes of the pipeline parts for the tests of the engine's choices; no model and no ONNX Runtime involved. */
 internal class FakeDecoder(private val result: Outcome<PixelImage> = Outcome.Success(TestImages.solid(400, 100, PixelImage.WHITE))) : ImageDecoder {
@@ -69,9 +70,10 @@ internal class FakeHebrewReader(
         return probe
     }
 
-    override suspend fun read(image: PixelImage): Outcome<String> {
+    override suspend fun read(image: PixelImage): Outcome<List<PlacedLine>> {
         reads++
-        return Outcome.Success(text)
+        val lines = text.lines().mapIndexedNotNull { row, line -> hebrewLine(line, 0, row * 30, 200, row * 30 + 20) }
+        return Outcome.Success(lines)
     }
 }
 

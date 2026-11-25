@@ -21,7 +21,8 @@ data class Translation(
 /** Translates text between languages. Implementations are chosen in the composition root; the UI only sees this interface. */
 interface Translator {
     /**
-     * Translates [text] from [from] to [to].
+     * Translates [text] from [from] to [to]. Every line break of [text] is meant and is in the translation too, so a
+     * caller joins the lines that only wrap a paragraph first ([RecognitionResult.runningText]).
      * A text that is blank, a pair without a route, a model that is not installed and similar expected problems come
      * back as [Outcome.Failure] with a message for the user; callers check the catalog first to offer the download.
      * When [from] equals [to] the text comes back unchanged. The call is cancellable and does its heavy work off the

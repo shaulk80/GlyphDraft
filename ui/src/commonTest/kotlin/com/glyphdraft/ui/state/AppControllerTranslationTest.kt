@@ -100,6 +100,22 @@ class AppControllerTranslationTest {
         }
 
     @Test
+    fun theRunningTextIsTranslatedAndTheLinesOfThePageStayTheReadText() =
+        runTest {
+            val read = RecognitionResult("one wrapped\nline", Language.English, detected = true, runningText = "one wrapped line")
+            engine.outcome = Outcome.Success(read)
+            val controller = controllerWithImage(Language.German)
+
+            controller.recognize()
+            advanceUntilIdle()
+            controller.saveResult()
+            advanceUntilIdle()
+
+            assertEquals("one wrapped line", translator.calls.single().first)
+            assertEquals("one wrapped\nline", saver.savedText)
+        }
+
+    @Test
     fun aReadThatIsNotToBeTrustedOrNeedsNoTranslationIsNotTranslated() =
         runTest {
             val cases =

@@ -1,6 +1,7 @@
 package com.glyphdraft.engine.ocr
 
 import com.glyphdraft.core.Outcome
+import com.glyphdraft.engine.layout.PlacedLine
 import com.glyphdraft.engine.models.FileModelCatalog
 import com.glyphdraft.engine.models.ModelManifest
 import java.nio.file.Files
@@ -8,6 +9,7 @@ import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 
@@ -22,19 +24,16 @@ class TesseractHebrewReaderTest {
     }
 
     @Test
-    fun blankLinesAreDroppedAndTheTextIsTrimmed() {
-        val cases =
-            listOf(
-                "שלום\n\nעולם\n\n" to "שלום\nעולם",
-                "אחד\r\n\r\nשניים\r\n" to "אחד\nשניים",
-                "  אחד  \n \t \n  שניים  " to "אחד\nשניים",
-                "אחד\nשניים" to "אחד\nשניים",
-                "\n\n" to "",
-                "" to "",
-            )
+    fun aHebrewLineIsTrimmedAndRunsFromItsRightEdgeToItsLeftEdge() {
+        val line = hebrewLine("  שלום עולם\n", left = 100, top = 40, right = 700, bottom = 70)
 
-        for ((raw, expected) in cases) {
-            assertEquals(expected, raw.withoutBlankLines(), "'${raw.replace("\n", "\\n")}'")
+        assertEquals(PlacedLine("שלום עולם", start = -700.0, end = -100.0, center = 55.0, height = 30.0), line)
+    }
+
+    @Test
+    fun aBlankHebrewLineIsNoLine() {
+        for (blank in listOf("", "  ", "\n", " \t\r\n")) {
+            assertNull(hebrewLine(blank, 0, 0, 10, 10), "'${blank.replace("\n", "\\n")}'")
         }
     }
 

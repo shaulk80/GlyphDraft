@@ -1,10 +1,12 @@
 package com.glyphdraft.engine.ocr
 
 import com.glyphdraft.core.Outcome
+import com.glyphdraft.engine.layout.PlacedLine
 import com.glyphdraft.engine.models.FileModelCatalog
 import com.glyphdraft.engine.models.ModelManifest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.bytedeco.tesseract.ResultIterator
 import org.bytedeco.tesseract.TessBaseAPI
 import org.bytedeco.tesseract.global.tesseract
 
@@ -30,11 +32,11 @@ class TesseractHebrewReader(private val catalog: FileModelCatalog) : HebrewReade
             }
         }
 
-    override suspend fun read(image: PixelImage): Outcome<String> =
+    override suspend fun read(image: PixelImage): Outcome<List<PlacedLine>> =
         withContext(Dispatchers.Default) {
             when (val page = pageOf(image)) {
                 is Outcome.Failure -> page
-                is Outcome.Success -> Outcome.Success(page.value.text)
+                is Outcome.Success -> Outcome.Success(page.value.lines)
             }
         }
 
@@ -77,10 +79,10 @@ class TesseractHebrewReader(private val catalog: FileModelCatalog) : HebrewReade
                 return Outcome.Failure("Tesseract could not read the image.")
             }
 
-            val text = readText(tesseractApi)
+            val lines = readLines(tesseractApi)
             val confidence = tesseractApi.MeanTextConf() / PERCENT
             tesseractApi.Clear()
-            return Outcome.Success(PageRead(image, text.withoutBlankLines(), confidence))
+            return Outcome.Success(PageRead(image, lines, confidence))
         } catch (e: UnsatisfiedLinkError) {
             return Outcome.Failure("Tesseract native library could not be loaded: ${e.message}", e)
         } catch (e: NoClassDefFoundError) {
@@ -113,16 +115,55 @@ class TesseractHebrewReader(private val catalog: FileModelCatalog) : HebrewReade
         return Outcome.Success(created)
     }
 
-    private fun readText(tesseractApi: TessBaseAPI): String {
-        val pointer = tesseractApi.GetUTF8Text() ?: return ""
+    /**
+     * The text lines of the recognized page. Tesseract also groups them into paragraphs, but splits a page where the
+     * image has no gap (the Hebrew fixture), so only the places of the lines are used.
+     */
+    private fun readLines(tesseractApi: TessBaseAPI): List<PlacedLine> {
+        val iterator = tesseract.TessBaseAPIGetIterator(tesseractApi)
+        if (iterator == null || iterator.isNull) {
+            return emptyList()
+        }
+
         try {
-            return pointer.string
+            val lines = ArrayList<PlacedLine>()
+            do {
+                readLine(iterator)?.let(lines::add)
+            } while (tesseract.TessResultIteratorNext(iterator, tesseract.RIL_TEXTLINE))
+
+            return lines
         } finally {
-            pointer.deallocate()
+            tesseract.TessResultIteratorDelete(iterator)
         }
     }
 
-    private class PageRead(val image: PixelImage, val text: String, val confidence: Float)
+    /** The line [iterator] stands on, or null when it has no text. */
+    private fun readLine(iterator: ResultIterator): PlacedLine? {
+        val pointer = tesseract.TessResultIteratorGetUTF8Text(iterator, tesseract.RIL_TEXTLINE)
+        if (pointer == null || pointer.isNull) {
+            return null
+        }
+
+        val text =
+            try {
+                pointer.string
+            } finally {
+                tesseract.TessDeleteText(pointer)
+            }
+
+        val left = IntArray(1)
+        val top = IntArray(1)
+        val right = IntArray(1)
+        val bottom = IntArray(1)
+        val place = tesseract.TessResultIteratorGetPageIterator(iterator)
+        if (!tesseract.TessPageIteratorBoundingBox(place, tesseract.RIL_TEXTLINE, left, top, right, bottom)) {
+            return null
+        }
+
+        return hebrewLine(text, left[0], top[0], right[0], bottom[0])
+    }
+
+    private class PageRead(val image: PixelImage, val lines: List<PlacedLine>, val confidence: Float)
 
     private companion object {
         const val LANGUAGE = "heb"
@@ -133,15 +174,23 @@ class TesseractHebrewReader(private val catalog: FileModelCatalog) : HebrewReade
 }
 
 /**
- * One text line per line break, as the PP-OCRv5 readers give it. Tesseract ends every paragraph with an empty line and
- * may split a page into paragraphs where the image has none (the three lines of the Hebrew fixture came back with an
- * empty line after the second), so empty lines are dropped; the page's own paragraph gaps are lost with them.
+ * The line of [text] in the pixel rectangle given, or null when the text is blank. Hebrew runs to the left, so the line
+ * starts at its [right] edge: the edges are mirrored.
  */
-internal fun String.withoutBlankLines(): String =
-    lines()
-        .map { it.trim() }
-        .filter { it.isNotEmpty() }
-        .joinToString("\n")
+internal fun hebrewLine(text: String, left: Int, top: Int, right: Int, bottom: Int): PlacedLine? {
+    val trimmed = text.trim()
+    if (trimmed.isEmpty()) {
+        return null
+    }
+
+    return PlacedLine(
+        text = trimmed,
+        start = -right.toDouble(),
+        end = -left.toDouble(),
+        center = (top + bottom) / 2.0,
+        height = (bottom - top).toDouble(),
+    )
+}
 
 /** The pixels as bytes R, G, B per pixel, row by row: the layout `TessBaseAPI.SetImage` takes with 3 bytes per pixel. */
 internal fun PixelImage.toRgbBytes(): ByteArray {

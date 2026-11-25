@@ -11,6 +11,8 @@ import com.glyphdraft.core.RecognitionResult
 import com.glyphdraft.core.Script
 import com.glyphdraft.core.installedPacks
 import com.glyphdraft.engine.language.TextScripts
+import com.glyphdraft.engine.layout.PageLayout
+import com.glyphdraft.engine.layout.PageText
 import com.glyphdraft.engine.models.ModelManifest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -62,9 +64,12 @@ class OnDeviceOcrEngine(
 
         return when (val read = readWithPack(page, pack)) {
             is Outcome.Failure -> read
-            is Outcome.Success -> Outcome.Success(RecognitionResult(read.value.text, language, detected = false, lowQuality = read.value.lowQuality))
+            is Outcome.Success -> Outcome.Success(resultOf(read.value, language, detected = false))
         }
     }
+
+    private fun resultOf(read: TextRead, language: Language, detected: Boolean): RecognitionResult =
+        RecognitionResult(read.page.text, language, detected, read.lowQuality, read.page.runningText)
 
     private suspend fun readDetectingLanguage(page: PixelImage): Outcome<RecognitionResult> {
         // A translation model is in the same catalog (decision 0013) but reads nothing, so it must not take part in the probe.
@@ -105,17 +110,17 @@ class OnDeviceOcrEngine(
         val text =
             when (val read = reader.read(page)) {
                 is Outcome.Failure -> return read
-                is Outcome.Success -> read.value
+                is Outcome.Success -> PageLayout.compose(read.value)
             }
 
         // Tesseract is also confident about a page it read nothing of (0.95 on an English photo, where it found no
         // text at all), so the confidence alone does not make a page Hebrew: the text has to be written in Hebrew.
-        if (!onlyChoice && TextScripts.profile(text).dominant != Script.HEBREW) {
+        if (!onlyChoice && TextScripts.profile(text.text).dominant != Script.HEBREW) {
             return null
         }
 
         val lowQuality = ReadQuality.isLowHebrewReading(confidence)
-        return nonBlank(text) { Outcome.Success(RecognitionResult(it, Language.Hebrew, detected = true, lowQuality = lowQuality)) }
+        return nonBlank(text) { Outcome.Success(resultOf(TextRead(it, lowQuality), Language.Hebrew, detected = true)) }
     }
 
     private suspend fun readBestPack(page: PixelImage, packs: List<ModelPack>): Outcome<RecognitionResult> {
@@ -138,8 +143,8 @@ class OnDeviceOcrEngine(
         return when (val read = readRows(page, rows, best)) {
             is Outcome.Failure -> read
             is Outcome.Success -> {
-                val language = languageOf(read.value.text, best, packs)
-                Outcome.Success(RecognitionResult(read.value.text, language, detected = true, lowQuality = read.value.lowQuality))
+                val language = languageOf(read.value.page.text, best, packs)
+                Outcome.Success(resultOf(read.value, language, detected = true))
             }
         }
     }
@@ -163,7 +168,8 @@ class OnDeviceOcrEngine(
             is Outcome.Failure -> read
             is Outcome.Success -> {
                 val lowQuality = ReadQuality.isLowPaddleReading(rows.flatten(), read.value.text)
-                nonBlank(read.value.text) { Outcome.Success(TextRead(it, lowQuality)) }
+                val text = PageLayout.compose(read.value.placedLines())
+                nonBlank(text) { Outcome.Success(TextRead(it, lowQuality)) }
             }
         }
 
@@ -172,7 +178,7 @@ class OnDeviceOcrEngine(
         val text =
             when (val read = reader.read(page)) {
                 is Outcome.Failure -> return read
-                is Outcome.Success -> read.value
+                is Outcome.Success -> PageLayout.compose(read.value)
             }
 
         // The reader keeps the last page, so this costs no second recognition. A failed probe is no reason to doubt the text.
@@ -182,7 +188,7 @@ class OnDeviceOcrEngine(
     }
 
     /** The text of one reading and whether the engine doubts it ([RecognitionResult.lowQuality]). */
-    private class TextRead(val text: String, val lowQuality: Boolean)
+    private class TextRead(val page: PageText, val lowQuality: Boolean)
 
     /**
      * The language of [text] among the languages of all [installed] packs, not only of the pack that read it: the
@@ -201,8 +207,8 @@ class OnDeviceOcrEngine(
         return languages.firstOrNull { it.script == script } ?: pack.languages.first()
     }
 
-    private inline fun <T> nonBlank(text: String, onText: (String) -> Outcome<T>): Outcome<T> {
-        if (text.isBlank()) {
+    private inline fun <T> nonBlank(text: PageText, onText: (PageText) -> Outcome<T>): Outcome<T> {
+        if (text.text.isBlank()) {
             return Outcome.Failure(NO_TEXT)
         }
 

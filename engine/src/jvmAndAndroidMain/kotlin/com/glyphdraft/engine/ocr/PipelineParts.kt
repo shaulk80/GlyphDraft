@@ -1,6 +1,7 @@
 package com.glyphdraft.engine.ocr
 
 import com.glyphdraft.core.Outcome
+import com.glyphdraft.engine.layout.PlacedLine
 
 /** Finds the lines of text in an image. [TextDetector] is the PP-OCRv5 one; tests use fakes. */
 interface BoxDetector : AutoCloseable {
@@ -35,6 +36,6 @@ interface HebrewReader : AutoCloseable {
      */
     suspend fun probe(image: PixelImage): Outcome<Float>
 
-    /** The Hebrew text of [image], lines separated by line breaks. */
-    suspend fun read(image: PixelImage): Outcome<String>
+    /** The lines of Hebrew text of [image] in reading order; none when nothing was read. */
+    suspend fun read(image: PixelImage): Outcome<List<PlacedLine>>
 }

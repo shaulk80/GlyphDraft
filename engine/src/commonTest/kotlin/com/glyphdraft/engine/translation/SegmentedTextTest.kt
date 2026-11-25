@@ -17,6 +17,21 @@ class SegmentedTextTest {
     }
 
     @Test
+    fun joinKeepsTheLinesAndDropsThoseLeftEmpty() {
+        val lines = TextSegmenter().segment("One. Two.\nThree.\nFour.\n\nFive.")
+
+        val cases: List<Pair<List<String>, String>> =
+            listOf(
+                listOf("Eins.", "Zwei.", "Drei.", "Vier.", "Fünf.") to "Eins. Zwei.\nDrei.\nVier.\n\nFünf.",
+                listOf("Eins.", "Zwei.", " ", "Vier.", "Fünf.") to "Eins. Zwei.\nVier.\n\nFünf.",
+            )
+
+        for ((translated, expected) in cases) {
+            assertEquals(Outcome.Success(expected), lines.join(translated, Language.German), "translated: $translated")
+        }
+    }
+
+    @Test
     fun joinUsesNoSpaceForTargetsWithoutSpaces() {
         val translated = listOf("一。", "二。", "三。", "四。", "五。")
 

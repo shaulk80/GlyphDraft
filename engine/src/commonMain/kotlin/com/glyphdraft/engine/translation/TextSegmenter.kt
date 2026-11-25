@@ -1,21 +1,17 @@
 package com.glyphdraft.engine.translation
 
 /**
- * Prepares OCR text for translation: a blank line separates paragraphs, the lines of a paragraph are joined into running
- * text, and each paragraph is cut into sentences of at most [maxSentenceLength] characters (a model translates a
- * sentence at a time and loses meaning, memory and time on a long one). Several blank lines count as one.
+ * Prepares text for translation: a blank line separates paragraphs, every other line break is meant and kept (the
+ * lines a page wrapped are joined before, decision 0021), and each line is cut into sentences of at most
+ * [maxSentenceLength] characters (a model translates a sentence at a time and loses meaning, memory and time on a long
+ * one). Several blank lines count as one.
  */
 class TextSegmenter(maxSentenceLength: Int = DEFAULT_MAX_SENTENCE_LENGTH) {
     private val limiter = SentenceLimiter(maxSentenceLength)
 
-    fun segment(text: String): SegmentedText {
-        val paragraphs = paragraphLines(text)
-            .map { lines -> SentenceSplitter.split(LineJoiner.join(lines)) }
-            .map { sentences -> sentences.flatMap { limiter.limit(it) } }
-            .filter { it.isNotEmpty() }
+    fun segment(text: String): SegmentedText = SegmentedText(paragraphLines(text).map { lines -> lines.map(::sentencesOf) })
 
-        return SegmentedText(paragraphs)
-    }
+    private fun sentencesOf(line: String): List<String> = SentenceSplitter.split(line).flatMap { limiter.limit(it) }
 
     /** Lines of each paragraph, trimmed; blank lines (any line break style) only separate. */
     private fun paragraphLines(text: String): List<List<String>> {
