@@ -4,9 +4,10 @@ package com.glyphdraft.engine.translation
  * Cuts a paragraph into sentences for Latin, Cyrillic and Hebrew text (a terminator followed by a space) and for Chinese
  * and Japanese text (a full-width terminator ends a sentence at once).
  *
- * A wrong cut costs more than a missed one: the model translates half a sentence badly, while a long sentence is only
- * slower. So in doubt there is no cut: after an abbreviation, an initial or a number ("3. Mai"), and before a lowercase
- * letter after a period. Sentences that stay too long are cut by [SentenceLimiter].
+ * A wrong cut costs more than a missed one: the model translates half a sentence badly (it may invent the rest, such as
+ * a phone number after "tel."), while a long sentence is only slower. So in doubt there is no cut: after an abbreviation,
+ * an initial or a number ("3. Mai"), and, after a period, before a lowercase letter or a plus sign. Sentences that stay
+ * too long are cut by [SentenceLimiter].
  */
 internal object SentenceSplitter {
     private const val TERMINATORS = ".!?…"
@@ -17,7 +18,7 @@ internal object SentenceSplitter {
     private val ABBREVIATIONS =
         setOf(
             "mr", "mrs", "ms", "dr", "prof", "sr", "jr", "st", "vs", "no", "nr", "fig", "approx", "dept", "inc", "ltd",
-            "e.g", "i.e", "z.b", "d.h", "bzw", "ca",
+            "e.g", "i.e", "z.b", "d.h", "bzw", "ca", "tel", "тел",
         )
 
     /** [paragraph] is one line of running text; the result has no blank sentence. */
@@ -73,7 +74,7 @@ internal object SentenceSplitter {
             return true
         }
 
-        return !(isAbbreviation(text, from) || nextLetterIsLowercase(text, end))
+        return !(isAbbreviation(text, from) || continuesTheSentence(text, end))
     }
 
     /** A run of periods or ellipses ends a sentence only under conditions; "?" and "!" always do. */
@@ -87,10 +88,11 @@ internal object SentenceSplitter {
         return true
     }
 
-    private fun nextLetterIsLowercase(text: String, from: Int): Boolean {
+    /** What follows [from] cannot begin a sentence: a lowercase letter, or the plus sign of a phone number. */
+    private fun continuesTheSentence(text: String, from: Int): Boolean {
         val next = text.substring(from).firstOrNull { !it.isWhitespace() }
 
-        return next != null && next.isLowerCase()
+        return next != null && (next.isLowerCase() || next == '+')
     }
 
     /** The word in front of the period at [period] is an abbreviation, an initial ("J.") or a number ("3."). */

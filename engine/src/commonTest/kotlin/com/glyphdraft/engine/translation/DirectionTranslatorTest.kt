@@ -22,6 +22,15 @@ class DirectionTranslatorTest {
     }
 
     @Test
+    fun anAddressIsNotSentToTheModel() {
+        val result = translator.translate(listOf("Mail a@b.com now."), EmptyCoroutineContext)
+
+        val read = CharacterTokenizer().decode(model.sources.single().toList())
+        assertEquals("Mail Z19 now.", read)
+        assertEquals(Outcome.Success(listOf("Mail a@b.com now.[de]")), result)
+    }
+
+    @Test
     fun aBlankSentenceIsNotSentToTheModel() {
         for (blank in listOf("", " ", "\t\n")) {
             val fresh = TaggingModel("[de]")

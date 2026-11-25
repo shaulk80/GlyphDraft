@@ -8,7 +8,7 @@ AI-powered media translator: give it an image, get the text in it, in another la
 
 Pick an image (PNG, JPEG and other common formats), optionally say which language it is in, and get the text. Copy it or save it as a text file. Languages: English, German, French, Spanish (Latin scripts), Russian, Chinese, Japanese and Hebrew. If you do not choose a language, the app works it out from the image.
 
-**Translation (on `main`, not in 0.1.0).** Choose "Translate into" on the Home screen, or translate from the Result screen afterwards, and switch between the translation and the original; copy and save use the text you see. Targets: English, German, French, Spanish, Russian, Chinese and Hebrew; sources: all eight (Japanese is never a target, no usable model exists). The app translates between two languages other than English through English (and Hebrew through Russian), one model after the other, and says so in the picker ("via English", "download needed"). Quality: good between English and German, French, Spanish and Russian; weaker for Chinese as a target and for everything with Hebrew, which carry the mark "experimental" (Hebrew was read by a native speaker: fine for a hobby translation, not for sensitive documents). Machine translation makes mistakes; check what matters.
+**Translation (on `main`, not in 0.1.0).** Choose "Translate into" on the Home screen, or translate from the Result screen afterwards, and switch between the translation and the original; copy and save use the text you see. Targets: English, German, French, Spanish, Russian, Chinese and Hebrew; sources: all eight (Japanese is never a target, no usable model exists). The app translates between two languages other than English through English (and Hebrew through Russian), one model after the other, and says so in the picker ("via English", "download needed"). Quality: good between English and German, French, Spanish and Russian; weaker for Chinese as a target and for everything with Hebrew, which carry the mark "experimental" (Hebrew was read by a native speaker: fine for a hobby translation, not for sensitive documents). E-mail addresses and web links (beginning with `http://`, `https://` or `www.`) are kept exactly as they are. Machine translation makes mistakes; check what matters.
 
 ## Planned features (in order)
 
@@ -51,6 +51,8 @@ Windows and Linux packages are not signed. Windows SmartScreen will warn ("More 
 
 ## Known issues
 
+- **A page in two languages is translated as if it were in one.** The app takes one source language per image, so text in another language goes through the same model and can lose its meaning. Crop the image to one language if that matters.
+- **Translation into Hebrew can lose text.** The last step into Hebrew (from Russian, which every other language is translated into first) can leave out part of a line, such as a phone number and a room, and write an unrelated word in its place. Hebrew is marked "experimental"; compare with the original where it matters.
 - **Android: the sort order of the file dialog is not kept.** "Choose image" opens the system file browser, which keeps the last folder but not the sort order you picked; that setting belongs to the system and the app cannot change it.
 
 ## Build

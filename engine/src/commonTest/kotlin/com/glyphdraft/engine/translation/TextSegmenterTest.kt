@@ -39,6 +39,11 @@ class TextSegmenterTest {
                 "Wait... what happened? Nothing!" to listOf("Wait... what happened?", "Nothing!"),
                 "Ein Beispiel, z.B. dieses hier. Ende." to listOf("Ein Beispiel, z.B. dieses hier.", "Ende."),
                 "Wait... What happened?" to listOf("Wait...", "What happened?"),
+                "Mail a@example.org, tel. +44 20 7946, room B-204. Thanks." to
+                    listOf("Mail a@example.org, tel. +44 20 7946, room B-204.", "Thanks."),
+                "Tel. 030 1234567 anrufen. Ende." to listOf("Tel. 030 1234567 anrufen.", "Ende."),
+                "Мой тел. 8 800 555, дом. Всё." to listOf("Мой тел. 8 800 555, дом.", "Всё."),
+                "Phone. +1 212 555 0100" to listOf("Phone. +1 212 555 0100"),
             )
 
         assertSentences(cases)

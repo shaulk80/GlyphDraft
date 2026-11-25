@@ -33,7 +33,7 @@ Tasks:
 8. **UI flow** (done 2026-11-23, decision 0018). `AppController`, `AppState`: target language (null means no translation, the default), translate after the read or later from Result; `InstallFlow` also asks for the models a route needs, with the total size; cancel and Back as for a read. Stub translator; `AppControllerTest` cases.
 9. **UI screens** (done 2026-11-24, decision 0019). Target picker on Home and Settings with route marks, translation/original switch, progress, copy and save of either, experimental mark, click-through tests.
 10. **End to end and docs** (done 2026-11-24). Opt-in test image to translation (several routes, Latin and non-Latin sources, Hebrew); README (privacy, CC-BY credits for Helsinki-NLP, OPUS-MT and the converters, also in Settings); `architecture.md`; `CLAUDE.md` gotchas; checklist `docs/manual/m3.md`.
-11. **Hand test and v0.2.0.** Owner runs the checklist on desktop and the emulator (first-use download, offline afterwards, each route type, a photo, cancel); fixes; `/release 0.2.0`.
+11. **Hand test and v0.2.0** (run 2026-11-25; findings 1, 2 open). Owner runs the checklist on desktop and the emulator (first-use download, offline afterwards, each route type, a photo, cancel); fixes; `/release 0.2.0`.
 
 Decided by the owner 2026-11-23: M3 before the open issues (#30 parked; #8, #12, #15 are CI flakes); weak directions ship marked "experimental"; Hebrew is included. Size: the 150 MB figure becomes about 115 MB per direction, he to en (366 MB) an optional exception (decision 0012, accepted).
 

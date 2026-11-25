@@ -59,6 +59,14 @@ internal class TaggingModel(
     }
 }
 
+/** A model that writes [output] whatever it reads. */
+internal class FixedModel(private val output: String) : SentenceModel {
+    override fun generate(sourceIds: IntArray, maxNewTokens: Int, context: CoroutineContext): Outcome<IntArray> =
+        Outcome.Success(output.map { it.code }.toIntArray())
+
+    override fun close() = Unit
+}
+
 /** Opens a [TaggingModel] per direction and records "open <from>-<to>" and "close <tag>" in [events]. */
 internal class TaggingSource(
     val events: MutableList<String> = mutableListOf(),

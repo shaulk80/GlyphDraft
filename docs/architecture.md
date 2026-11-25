@@ -49,6 +49,7 @@ UI: target language
   -> Translator.translate(text, from, to)           -> Translation(text, from, to, route)
        OnDeviceTranslator: segment into paragraphs and sentences -> per step of the route (en and ru are hubs):
        open the model of one direction, translate every sentence, close it -> rejoin the layout
+       (e-mail addresses and web links never reach a model: AddressShield, decision 0020)
   -> UI: switch Translation / Original, copy / save of what is shown
 ```
 The language that goes in as `from` is the one the read found (or the one the user chose); a target equal to it is not translated. `FixtureImageTranslationTest` runs this chain from image to translation with the real models. M4 adds a handwriting-capable `OcrEngine`; M5 adds `SpeechRecognizer` as a second input; M6 adds a camera as a third source of images.

@@ -18,8 +18,9 @@ interface SentenceModel : AutoCloseable {
 
 /**
  * One loaded translation direction: turns sentences of the source language into sentences of the target language,
- * one at a time. Blank sentences are not sent to the model, and a sentence longer than the model's positions is cut at
- * the end (the segmenter keeps sentences far below that, so this only guards against a surprise).
+ * one at a time. Blank sentences are not sent to the model, nor are e-mail addresses and web links ([AddressShield]),
+ * and a sentence longer than the model's positions is cut at the end (the segmenter keeps sentences far below that, so
+ * this only guards against a surprise).
  */
 class DirectionTranslator(
     private val tokenizer: SubwordTokenizer,
@@ -49,7 +50,11 @@ class DirectionTranslator(
             return Outcome.Success("")
         }
 
-        val ids = fitted(tokenizer.encode(sentence))
+        return AddressShield.translate(sentence) { text -> runModel(text, context) }
+    }
+
+    private fun runModel(text: String, context: CoroutineContext): Outcome<String> {
+        val ids = fitted(tokenizer.encode(text))
         return when (val generated = model.generate(ids, config.generationLimit(ids.size), context)) {
             is Outcome.Failure -> generated
             is Outcome.Success -> Outcome.Success(tokenizer.decode(generated.value.toList()))
