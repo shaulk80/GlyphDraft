@@ -77,6 +77,23 @@ class OnDeviceTranslatorTest {
     }
 
     @Test
+    fun spacedTimesAreJoinedInHebrewOnly() = runTest {
+        // The hub writes the time right; the last model of each route spaces it.
+        val spacing =
+            DirectionSource { direction ->
+                val output = if (direction.to == ru) "at 9:00" else "at 9: 00"
+                Outcome.Success(DirectionTranslator(CharacterTokenizer(), testConfig(), FixedModel(output)))
+            }
+        val cases = listOf(he to "at 9:00", de to "at 9: 00")
+
+        for ((to, expected) in cases) {
+            val outcome = OnDeviceTranslator(catalog(), spacing).translate("Nine o'clock.", en, to)
+
+            assertEquals(expected, (outcome as Outcome.Success).value.text, "en to ${to.code}")
+        }
+    }
+
+    @Test
     fun theSamePairNeedsNoModelAndReturnsTheTextUnchanged() = runTest {
         val untouched = OnDeviceTranslator(catalog(installed = emptyList()), source)
 

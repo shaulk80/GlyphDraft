@@ -93,7 +93,7 @@ class OnDeviceTranslator(
             sentences =
                 when (val translated = translator.translate(sentences, context)) {
                     is Outcome.Failure -> return translated
-                    is Outcome.Success -> translated.value
+                    is Outcome.Success -> repaired(sentences, translated.value, step.to)
                 }
         }
 
@@ -103,6 +103,15 @@ class OnDeviceTranslator(
             is Outcome.Failure -> joined
             is Outcome.Success -> Outcome.Success(Translation(joined.value, from, to, route))
         }
+    }
+
+    /** [translations] of [sources] into [target], without the known slips of the model that writes that language. */
+    private fun repaired(sources: List<String>, translations: List<String>, target: Language): List<String> {
+        if (target != Language.Hebrew) {
+            return translations
+        }
+
+        return sources.zip(translations, HebrewTimes::join)
     }
 
     /** The open translator of [direction]; the one that was open before is closed first. */
