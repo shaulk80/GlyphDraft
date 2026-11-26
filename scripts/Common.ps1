@@ -33,7 +33,8 @@ function Get-AppVersion {
 }
 
 # Failures that say the dependency server, not our code, was the problem (Maven Central answers 429 to busy CI runners).
-$script:TransientGradleFailure = 'Received status code 429|Too Many Requests|Read timed out|Connect timed out|Connection reset'
+# For a plugin that cannot be downloaded Gradle prints only "could not resolve plugin artifact", not the server's answer.
+$script:TransientGradleFailure = 'Received status code 429|Too Many Requests|Read timed out|Connect timed out|Connection reset|could not resolve plugin artifact'
 $script:GradleRetryDelaySeconds = 30
 
 function ConvertTo-PlainLine {
@@ -64,8 +65,8 @@ function Invoke-GradleOnce {
 
 function Invoke-Gradle {
     # Returns $true on success; the caller decides what a failure means.
-    # A run that failed only because a dependency download was refused or timed out is repeated once (logged);
-    # any other failure, a failing test for example, is final at once.
+    # A run that failed because a dependency or plugin download failed is repeated once (logged); any other failure,
+    # a failing test for example, is final at once.
     param([string[]]$GradleArguments)
     $log = [System.IO.Path]::GetTempFileName()
     try {
@@ -77,7 +78,7 @@ function Invoke-Gradle {
             return $false
         }
 
-        Write-Host "RETRY: gradle failed on a dependency download (HTTP 429 or timeout); waiting $($script:GradleRetryDelaySeconds) s and trying once more." -ForegroundColor Yellow
+        Write-Host "RETRY: gradle failed on a dependency or plugin download; waiting $($script:GradleRetryDelaySeconds) s and trying once more." -ForegroundColor Yellow
         Start-Sleep -Seconds $script:GradleRetryDelaySeconds
         return (Invoke-GradleOnce $GradleArguments $log)
     }
