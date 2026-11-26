@@ -53,6 +53,7 @@ Windows and Linux packages are not signed. Windows SmartScreen will warn ("More 
 
 - **A page in two languages is translated as if it were in one.** The app takes one source language per image, so text in another language goes through the same model and can lose its meaning. Crop the image to one language if that matters.
 - **Translation into Hebrew can lose text.** The last step into Hebrew (from Russian, which every other language is translated into first) can leave out part of a line, such as a phone number and a room, and write an unrelated word in its place. Hebrew is marked "experimental"; compare with the original where it matters.
+- **The dashes of a list can be lost.** The reader can miss the dash in front of a list item. "Original" then shows the items on their own lines without it, but the translation joins items that begin with a small letter into one paragraph, which can change their meaning ([#54](https://github.com/shaulk80/GlyphDraft/issues/54)).
 - **Android: the sort order of the file dialog is not kept.** "Choose image" opens the system file browser, which keeps the last folder but not the sort order you picked; that setting belongs to the system and the app cannot change it.
 
 ## Build
