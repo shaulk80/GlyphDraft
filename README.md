@@ -2,18 +2,18 @@
 
 AI-powered media translator: give it an image, get the text in it, in another language if you want. Runs on-device. For Windows, Linux and Android.
 
-**Status: version 0.1.0.** Text from an image works (printed text, language detected if you do not give it). Translation into another language is built on `main` and waits for its hand test (version 0.2.0); the other inputs are still to come. See [docs/status.md](docs/status.md) and [docs/plan.md](docs/plan.md).
+**Status: version 0.2.0.** Text from an image and its translation into another language work (printed text, language detected if you do not give it); the other inputs are still to come. See [docs/status.md](docs/status.md) and [docs/plan.md](docs/plan.md).
 
 ## What it does today
 
 Pick an image (PNG, JPEG and other common formats), optionally say which language it is in, and get the text. Copy it or save it as a text file. Languages: English, German, French, Spanish (Latin scripts), Russian, Chinese, Japanese and Hebrew. If you do not choose a language, the app works it out from the image.
 
-**Translation (on `main`, not in 0.1.0).** Choose "Translate into" on the Home screen, or translate from the Result screen afterwards, and switch between the translation and the original; copy and save use the text you see. Targets: English, German, French, Spanish, Russian, Chinese and Hebrew; sources: all eight (Japanese is never a target, no usable model exists). The app translates between two languages other than English through English (and Hebrew through Russian), one model after the other, and says so in the picker ("via English", "download needed"). Quality: good between English and German, French, Spanish and Russian; weaker for Chinese as a target and for everything with Hebrew, which carry the mark "experimental" (Hebrew was read by a native speaker: fine for a hobby translation, not for sensitive documents). The translation keeps the lines of the page: a paragraph that the page wraps comes out as one line, while headings, list items and gaps stay. This is judged from where the lines are, so an unusual layout can come out wrong, and table columns are not restored. E-mail addresses and web links (beginning with `http://`, `https://` or `www.`) are kept exactly as they are. Machine translation makes mistakes; check what matters.
+**Translation.** Choose "Translate into" on the Home screen, or translate from the Result screen afterwards, and switch between the translation and the original; copy and save use the text you see. Targets: English, German, French, Spanish, Russian, Chinese and Hebrew; sources: all eight (Japanese is never a target, no usable model exists). The app translates between two languages other than English through English (and Hebrew through Russian), one model after the other, and says so in the picker ("via English", "download needed"). Quality: good between English and German, French, Spanish and Russian; weaker for Chinese as a target and for everything with Hebrew, which carry the mark "experimental" (Hebrew was read by a native speaker: fine for a hobby translation, not for sensitive documents). The translation keeps the lines of the page: a paragraph that the page wraps comes out as one line, while headings, list items and gaps stay. This is judged from where the lines are, so an unusual layout can come out wrong, and table columns are not restored. E-mail addresses and web links (beginning with `http://`, `https://` or `www.`) are kept exactly as they are. Machine translation makes mistakes; check what matters.
 
 ## Planned features (in order)
 
 1. ~~Text from an image (OCR); the language is detected if you do not give it.~~ (version 0.1)
-2. Translation into a language you choose (built, hand test pending; version 0.2).
+2. ~~Translation into a language you choose.~~ (version 0.2)
 3. Handwritten text.
 4. Audio to text.
 5. Android: point the camera at text and read it.

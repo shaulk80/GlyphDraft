@@ -11,7 +11,8 @@ android {
         applicationId = "com.glyphdraft.app"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
+        // Raise by one for every release: Android refuses to install a lower code over a higher one.
+        versionCode = 2
         versionName = providers.gradleProperty("appVersion").get()
         // ONNX Runtime ships four ABIs (about 15 MB each); phones are arm64, the emulator on x86_64 PCs is x86_64.
         ndk {
