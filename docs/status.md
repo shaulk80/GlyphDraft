@@ -4,17 +4,18 @@ Updated: 2026-11-26. Keep this file under 3 KB. History belongs in git, pull req
 
 ## Now
 
-M0, M1 and M2 are done. `v0.1.0` (text from an image: PP-OCRv5 on ONNX Runtime, Hebrew through Tesseract, models downloaded on first use) was published on 2026-11-22 as a pre-release, after the hand test (`docs/manual/m2.md`: 14 findings, all fixed or filed). CI builds, tests, packages and smoke-tests on Windows, Linux and Android; `main` and release tags are protected.
+M0 to M3 are done. `v0.2.0` adds on-device translation (OPUS-MT int8 on ONNX Runtime with an own Kotlin tokenizer, English and Russian as hubs, decisions 0012 to 0021) to text from an image (`v0.1.0`); the Releases page shows what is published. Hand test: `docs/manual/m3.md` (8 findings, all fixed or accepted for 0.2.0). CI builds, tests, packages and smoke-tests on Windows, Linux and Android; `main` and release tags are protected.
 
 ## Next
 
-- Issues from the hand test: #28 and #29 are closed (#28: the sort order of the Android file dialog is a platform limit, in the README under Known issues); #30 (Linux window icon) is parked until seen on a native Linux desktop.
-- Next milestone: M3, translation (`docs/plan.md`, 11 tasks; owner decided: M3 before the open issues, weak directions experimental, Hebrew included). OPUS-MT int8 on ONNX Runtime with an own Kotlin tokenizer (decision 0012, `docs/spikes/m3-translation.md`); English and Russian are hubs. Done: tasks 1 to 10 (types, tokenizer, manifest of 13 directions and routes, `OnDeviceTranslator` with all directions matching the spike chrF, Hebrew measured through the hubs and kept experimental, engine wiring measured on the emulator, `AppController` translation flow, target picker with route marks and translation/original switch, decision 0019). Task 10: `FixtureImageTranslationTest` (image to translation through `OnDeviceEngine`, 16 cases, 5 on CI), CC-BY credits in the README and Settings, checklist `docs/manual/m3.md`. Task 11: hand test run on 2026-11-25 (desktop, emulator, Linux) and repeated on 2026-11-26, 8 findings in `docs/manual/m3.md`. Fixed: the invented phone number, #45, rewritten addresses (decision 0020); accepted: #51, the mixed-language page and text lost into Hebrew (both under Known issues). Lost line breaks and text (findings 1, 2) fixed from the line positions (decision 0021), confirmed by the repeat. Finding 8 (list dashes not read, so items are joined) accepted for 0.2.0: #54, under Known issues. Next: `/release 0.2.0`.
+- Before the next milestone: the CI flakes #8, #12 and #15.
+- Next milestone: M4, handwriting (`docs/plan.md`); plan it into tasks first.
+- Issues from the hand tests: #54 (list dashes are not read) and #51 (auto-detect offers no missing reading model) are open; #30 (Linux window icon) is parked until seen on a native Linux desktop.
 
 ## Open
 
 - Trademark search (USPTO, TMview, WIPO) for "GlyphDraft" not done; do it before any public launch.
 - `stacks/kotlin-multiplatform.md` for the newproject skill is not written (owner's call).
-- Not verified: Android on a real device (emulator API 37 only). The Linux package was hand-tested in WSL on 2026-11-22 and works.
+- Not verified: Android on a real device (emulator API 37 only). Linux was hand-tested on 2026-11-22 (package in WSL) and 2026-11-25 (M3).
 - Android: state is lost when the OS kills the background process (only rotation is handled).
 - Hand-test how-to and results: `docs/manual-testing.md` and `docs/manual/` (one file per milestone).
