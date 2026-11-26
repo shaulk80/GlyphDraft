@@ -79,14 +79,42 @@ function Test-EngineSelfTest {
     return $false
 }
 
-function Stop-ProcessAndWait {
-    # Windows keeps files locked until the process has really exited, so wait before deleting them.
-    param([System.Diagnostics.Process]$Process)
-    if ($null -eq $Process -or $Process.HasExited) {
+function Get-ProcessTree {
+    # The process and the processes it started, at any depth. Windows only: the jpackage launcher runs the app in a
+    # second process, and Windows cannot delete files that a process still uses. Linux can.
+    param([System.Diagnostics.Process]$Root)
+    $Root
+    if (-not (Test-IsWindowsHost)) {
         return
     }
-    Stop-Process -Id $Process.Id -Force
-    [void]$Process.WaitForExit(15000)
+    foreach ($entry in @(Get-CimInstance Win32_Process -Filter "ParentProcessId = $($Root.Id)")) {
+        $child = Get-Process -Id $entry.ProcessId -ErrorAction SilentlyContinue
+        # Windows reuses process ids: a process that is older than its "parent" is not its child.
+        if ($null -ne $child -and $child.StartTime -ge $Root.StartTime) {
+            Get-ProcessTree $child
+        }
+    }
+}
+
+function Stop-ProcessAndWait {
+    # Windows keeps files locked until a process has really exited, so wait for the whole tree before deleting them.
+    param([System.Diagnostics.Process]$Process)
+    if ($null -eq $Process) {
+        return
+    }
+    # Listed before anything is stopped, while the parent links can still be followed.
+    $tree = @(Get-ProcessTree $Process)
+    foreach ($member in $tree) {
+        if (-not $member.HasExited) {
+            # A child can end by itself right here, because its parent ended; the wait below checks that it is gone.
+            Stop-Process -Id $member.Id -Force -ErrorAction SilentlyContinue
+        }
+    }
+    foreach ($member in $tree) {
+        if (-not $member.WaitForExit(15000)) {
+            Write-Warning "Process $($member.Id) did not exit within 15 s"
+        }
+    }
 }
 
 function Test-DesktopSmoke {
