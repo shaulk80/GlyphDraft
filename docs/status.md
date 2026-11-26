@@ -8,7 +8,7 @@ M0 to M3 are done. `v0.2.0` adds on-device translation (OPUS-MT int8 on ONNX Run
 
 ## Next
 
-- Before the next milestone: the CI flakes #8, #12 and #15.
+- CI flakes fixed: Gradle asks a failing repository six times and a failed plugin download gets the script's retry (#8, #15); the smoke test waits for the app's child process before it deletes files (#12). Check on CI: no `Attempt 1 of 3 failed` in the `build-windows` log.
 - Next milestone: M4, handwriting (`docs/plan.md`); plan it into tasks first.
 - Issues from the hand tests: #54 (list dashes are not read) and #51 (auto-detect offers no missing reading model) are open; #30 (Linux window icon) is parked until seen on a native Linux desktop.
 
