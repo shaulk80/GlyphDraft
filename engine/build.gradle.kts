@@ -28,10 +28,17 @@ kotlin {
     }
 
     // The fixture tests with the real models run only when these variables are set (scripts/build.ps1 sets the first
-    // one on CI). They are task inputs, so a run with models is never replaced by a cached run without them.
+    // one on CI). They are task inputs, so a run with models is never replaced by a cached run without them. So are the
+    // fixtures: they sit outside the source sets, and a changed page or text has to run the tests again.
     tasks.withType<Test>().configureEach {
         inputs.property("networkTests", providers.environmentVariable("GLYPHDRAFT_NETWORK_TESTS").orElse(""))
         inputs.property("modelsDirectory", providers.environmentVariable("GLYPHDRAFT_MODELS_DIR").orElse(""))
+        inputs.dir("src/test/resources/fixtures").withPropertyName("fixtures").withPathSensitivity(PathSensitivity.RELATIVE)
+    }
+    // HandwritingBaselineTest writes its table here (scripts/build.ps1 prints it). Declared as an output, so that a run
+    // taken from the build cache brings the table with it.
+    tasks.withType<Test>().matching { it.name == "jvmTest" }.configureEach {
+        outputs.dir(layout.buildDirectory.dir("reports/handwriting")).withPropertyName("handwritingReport")
     }
 
     sourceSets {
