@@ -1,6 +1,6 @@
 # GlyphDraft: status
 
-Updated: 2026-11-26. Keep this file under 3 KB. History belongs in git, pull requests and the Releases page, not here.
+Updated: 2026-11-27. Keep this file under 3 KB. History belongs in git, pull requests and the Releases page, not here.
 
 ## Now
 
@@ -9,7 +9,7 @@ M0 to M3 are done. `v0.2.0` adds on-device translation (OPUS-MT int8 on ONNX Run
 ## Next
 
 - CI flakes fixed: Gradle asks a failing repository six times and a failed plugin download gets the script's retry (#8, #15); the smoke test waits for the app's child process before it deletes files (#12). Clean on CI in PR #58; reopen #12 if `Attempt 1 of 3 failed` returns to the `build-windows` log.
-- Next milestone: M4, handwriting (`docs/plan.md`); plan it into tasks first.
+- Next milestone: M4, handwriting. Planned in twelve tasks on 2026-11-27 (`docs/plan.md`, decision 0022: owner's answers in, reader per language and cloud provider open until the spikes). Next: task 1 (fixtures and baseline); it needs the handwriting samples.
 - Issues from the hand tests: #54 (list dashes are not read) and #51 (auto-detect offers no missing reading model) are open; #30 (Linux window icon) is parked until seen on a native Linux desktop.
 
 ## Open
