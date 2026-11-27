@@ -128,6 +128,7 @@ One photographed page of Hebrew cursive (a school assignment; the owner consents
 - Asked for both texts, it kept every sentence in order and the changes can be listed by comparing the two. At low, one change replaced a word with a different one.
 - The Claude transcript fixed real mistakes but also dropped part of a sentence, reordered sentences and replaced words with ones of another meaning.
 - Availability: `gemini-3.8-flash` never answered (HTTP 503 or time-out); Hydrogen needed a second run once and a retry twice.
+- The shipped Hebrew model (Tesseract `heb`, a printed-text model) on the same page: CER 83.0 % on the 3072 x 4080 original, 75.9 % on the 2048-pixel fixture made from it (`HandwritingBaselineTest`, which also folds full-width forms and more quote shapes). The rows above were read from the original, so later runs on fixtures are not directly comparable with them.
 ## Proposal
 
 1. Measure the shipped models first on the fixtures (task 1).
