@@ -107,26 +107,28 @@ The spike starts with Claude because the owner can test it without a new key; th
 
 ## First measurements (2026-11-27)
 
-One photographed page of Hebrew cursive (a school assignment; the owner consents to it as a public fixture), one run per row, free tier, photo sent without metadata. CER against an as-written text drafted by a Claude model before any Gemini output was seen and **not yet verified** by the owner. Blank length and quote and dash shapes were not counted. Scripts were temporary and are not in the repository.
+One photographed page of Hebrew cursive (a school assignment; the owner consents to it as a public fixture), one run per row, free tier, photo sent without metadata. CER against the page's text as written, **verified by the owner** on 2026-11-27. Blank length and quote and dash shapes were not counted. The scripts are not in the repository.
 
 | Model, thinking level | Asked for | CER % | Words found % | Seconds | Paid-tier USD |
 |---|---|---|---|---|---|
-| gemini-4-hydrogen, high (default) | as written | 1.7 | 95.5 | 144 | 0.25 |
-| gemini-4-hydrogen, medium | as written | 1.2 | 96.0 | 24 | 0.025 |
+| gemini-4-hydrogen, high (default) | as written | 2.0 | 94.3 | 144 | 0.25 |
+| gemini-4-hydrogen, medium | as written | 1.3 | 94.9 | 24 | 0.025 |
 | gemini-4-hydrogen, low | as written | 1.7 | 93.8 | 8 | 0.012 |
-| gemini-4-hydrogen, medium | as written and corrected | 1.4 | 94.9 | 22 | 0.034 |
+| gemini-4-hydrogen, medium | as written and corrected | 1.6 | 93.8 | 22 | 0.034 |
 | gemini-4-hydrogen, low | as written and corrected | 1.4 | 94.3 | 11 | 0.016 |
-| gemini-3.5-flash-lite | as written | 16.4 | 76.7 | 5 | 0.001 |
+| gemini-3.5-flash-lite | as written | 16.7 | 75.6 | 5 | 0.001 |
 | gemini-3.8-flash | as written | no answer | | | |
-| an earlier Claude transcript (model and settings not recorded) | corrected | 20.3 | 88.6 | | |
+| an earlier Claude transcript (model and settings not recorded) | corrected | 20.9 | 86.4 | | |
 
-- CER and words for the "corrected" rows score the as-written part.
+- The reference was drafted by a Claude model before any Gemini output was seen (that draft scores CER 0.8 %), then corrected by the owner in five places: three where the draft had fixed the writer's mistake, one dropped letter, one misread word.
+- That misread word was wrong in every reading in the table and in the draft; only the owner's check found it. Agreement between readers does not prove a reading, and an AI proofreader (answer 6) can share such a mistake.
+- CER and words for the "as written and corrected" rows score the as-written part.
 - Thinking level (`generationConfig.thinkingConfig.thinkingLevel`; Hydrogen cannot turn thinking off) changed time and cost far more than accuracy.
 - Hydrogen's "as written" text is not literal: in every run it completed a word the writer left a letter out of.
 - Asked for both texts, it kept every sentence in order and the changes can be listed by comparing the two. At low, one change replaced a word with a different one.
 - The Claude transcript fixed real mistakes but also dropped part of a sentence, reordered sentences and replaced words with ones of another meaning.
 - Availability: `gemini-3.8-flash` never answered (HTTP 503 or time-out); Hydrogen needed a second run once and a retry twice.
-
+- The shipped Hebrew model (Tesseract `heb`, a printed-text model) on the same page: CER 83.0 % on the 3072 x 4080 original, 75.9 % on the 2048-pixel fixture made from it (`HandwritingBaselineTest`, which also folds full-width forms and more quote shapes). The rows above were read from the original, so later runs on fixtures are not directly comparable with them.
 ## Proposal
 
 1. Measure the shipped models first on the fixtures (task 1).

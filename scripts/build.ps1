@@ -53,6 +53,22 @@ function New-TargetPackage {
     }
 }
 
+function Show-HandwritingBaseline {
+    # Handwriting accuracy is reported, never judged: HandwritingBaselineTest (engine) writes the tables. On CI they
+    # also go to the job's summary page.
+    $report = Join-Path $script:RepoRoot 'engine/build/reports/handwriting/baseline.md'
+    if (-not (Test-Path -LiteralPath $report)) {
+        Write-Warning "No handwriting baseline was written to $report."
+        return
+    }
+
+    $lines = Get-Content -LiteralPath $report -Encoding UTF8
+    $lines | Out-Host
+    if ($env:GITHUB_STEP_SUMMARY) {
+        Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value $lines -Encoding UTF8
+    }
+}
+
 if (-not $Target) {
     $Target = Get-HostTarget
 }
@@ -88,6 +104,11 @@ if ($Target -ne 'android') {
 }
 if (-not (Invoke-Gradle ($tasks.Test + $tasks.Build))) {
     Stop-Build 'build or tests'
+}
+
+if ($Target -ne 'android') {
+    Write-Step 'Handwriting baseline'
+    Show-HandwritingBaseline
 }
 
 Write-Step 'Package'

@@ -13,7 +13,7 @@ desktopApp/  JVM application (Windows, Linux): main, data folder, file log, jpac
 androidApp/  Android application: MainActivity, manifest, icon resources, signing.
 engine/      KMP library (jvm + android): on-device implementations of the interfaces (ONNX Runtime; so far only the self-test and the desktop native-library loader); a cloud engine is a later sibling.
 config/      allowed-licenses.json (license allow-list for `checkLicense`)
-scripts/     build.ps1 (the one build script for CI and local) + Common/Checksums/Package/Smoke.ps1, smoke-android.sh, icons/GenerateIcons.java
+scripts/     build.ps1 (the one build script for CI and local) + Common/Checksums/Package/Smoke.ps1, smoke-android.sh, icons/GenerateIcons.java, fixtures/PrepareHandwriting.java (the only way a photo enters the handwriting fixtures)
 docs/        status.md, plan.md, brief.md, decisions/
 ```
 
