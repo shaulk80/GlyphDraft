@@ -14,7 +14,8 @@ internal object BaselineReport {
         lines.add("")
         lines.add(
             "Character error rate (CER), each page read in its own language. Not counted: whitespace, quote and dash shapes, " +
-                "blank length, full-width forms. Over 100 % means invented text. Reported only, never a gate.",
+                "blank length, full-width forms, letter case where the manifest allows either. Over 100 % means invented text. " +
+                "Reported only, never a gate.",
         )
         lines.add("")
         lines.addAll(languageTable(scores))

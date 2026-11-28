@@ -8,16 +8,12 @@ M0 to M3 are done. `v0.2.0` adds on-device translation (OPUS-MT int8 on ONNX Run
 
 ## Next
 
-**Next step: finish M4 task 1 with the 40 delivered pages** (not started). All are there with their text (checked 2026-11-28), prepared by the photo tool into `engine/src/test/resources/fixtures/handwriting-pending/`. A page moves into `handwriting/` together with its `.txt`, manifest row and README entry; then the baseline is recorded.
-
-- The owner consents to publishing the 15 handwritten pages (2026-11-28); the 25 AI ones were drawn with Gemini ("Auto" mode, submodel unknown). Both go into the fixtures README with the pages.
-- The expected text follows the page, not the request; what to check page by page, and the AI-drawn texts: `docs/manual/m4-samples.md`.
-- The score must ignore letter case on `ru-01` (written in capitals; either case is acceptable).
+**Next step: M4 task 2, the on-device spike** (`docs/plan.md`; not started).
 
 ## M4 and issues
 
 - M4, handwriting: twelve tasks (`docs/plan.md`, decision 0022: reader per language and cloud provider open until the spikes).
-- Task 1 (fixtures and baseline): photo tool, fixture rules and baseline report (printed by `build.ps1`, on the CI summary page) are in; `he-school` reads at CER 75.9 %. Done when the baseline over all pages is recorded.
+- Task 1 (fixtures and baseline) is done: 41 pages, baseline in decision 0022 (2026-11-28): English 3.1 % CER, Russian 20.9, Hebrew 64.1; AI-drawn de, es, zh, ja under 1, fr 9.7.
 - CI flakes fixed (#8, #12, #15), clean on CI in PR #58; reopen #12 if `Attempt 1 of 3 failed` returns to the `build-windows` log.
 - Issues from the hand tests: #54 (list dashes are not read) and #51 (auto-detect offers no missing reading model) are open; #30 (Linux window icon) is parked until seen on a native Linux desktop.
 

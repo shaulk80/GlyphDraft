@@ -1,11 +1,11 @@
 # M4: handwriting samples
 
-All 40 numbered pages (5 per language, `docs/plan.md`, task 1) were delivered on 2026-11-28 and checked: each has its full text, on the requested paper. The photo tool has prepared them; they wait in `engine/src/test/resources/fixtures/handwriting-pending/` until their expected texts are written. `he-school`, an extra page beside the numbered set, is already a fixture. How a page gets in, and its rules: `engine/src/test/resources/fixtures/handwriting/README.md`.
+All 40 numbered pages (5 per language, `docs/plan.md`, task 1) were delivered on 2026-11-28 and checked: each has its full text, on the requested paper. Since 2026-11-28 they are fixtures, with `he-school`, an extra page beside the numbered set. How a page gets in, its rules, consent and every difference from the asked text: `engine/src/test/resources/fixtures/handwriting/README.md`.
 
 | Languages | Made by | Still open |
 |---|---|---|
-| English, Russian, Hebrew | owner, handwritten; the owner consents to publishing them as test fixtures (2026-11-28) | text verified by the writer or another reader of the language |
-| German, French, Spanish, Chinese, Japanese | Gemini in "Auto" mode, exact submodel unknown (owner, 2026-11-28) | proofreading by an AI agent |
+| English, Russian, Hebrew | owner, handwritten; the owner consents to publishing them as test fixtures (2026-11-28) | nothing (verified by the owner, 2026-11-28) |
+| German, French, Spanish, Chinese, Japanese | Gemini in "Auto" mode, exact submodel unknown (owner, 2026-11-28) | nothing (proofread by an AI agent) |
 
 ## Pages as requested
 
@@ -19,18 +19,24 @@ All 40 numbered pages (5 per language, `docs/plan.md`, task 1) were delivered on
 
 The handwritten images are crops around the text, not whole pages; the owner accepts them as they are (2026-11-28). The texts they were copied from are outside the repository. An AI agent can draft their expected text (an AI draft of `he-school` had five differences).
 
-## To check when writing the expected texts
+## Verification of the handwritten pages
 
-The expected text and the manifest's `writing` column follow the page, not the request. The differences below were seen by an AI; for the handwritten pages a reader of the language confirms them.
+An AI agent drafted the 15 texts from the images; the owner, who wrote the pages, verified them (2026-11-28). The places where the draft departed from the asked text, or was least sure:
 
-- `en-01`: "seeds of young plants" (asked: "or").
-- `ru-02`, `he-02`: a colon after the heading.
-- `ru-05`: looks like "две больших бочки" (asked: "большие").
-- `he-05`: looks like "חבילות" (asked: "חביות").
-- `he-01`: the last letter of the second word looks like a final kaf.
-- `ru-01` is written in capitals. A reading in capitals and one in regular case are both acceptable (owner, 2026-11-28), so the score must ignore letter case on this page; today it does not.
-- `fr-01` is cursive (asked: print-like); `zh-03`, `zh-05`, `ja-03` and `ja-04` look print-like (asked: cursive); no AI-drawn page 05 is really untidy.
-- `fr-05` has stray accent-like strokes.
+| Page | In the draft | Asked | Owner's result | Date |
+|---|---|---|---|---|
+| `en-01` | "if you have one" | "if you own one" | confirmed | 2026-11-28 |
+| `en-01` | "seeds of young plants" | "seeds or young plants" | confirmed | 2026-11-28 |
+| `ru-01` | "семена и рассаду" | "семена или рассаду" | confirmed | 2026-11-28 |
+| `ru-02` | "Часы работы:" | no colon | confirmed | 2026-11-28 |
+| `ru-05` | "резко вырос" (hard to read) | the same | confirmed | 2026-11-28 |
+| `ru-05` | "две больших бочки" | "две большие бочки" | confirmed | 2026-11-28 |
+| `he-01` | final kaf ending the second word | vav: הביאו (havi'u) | wrong: a vav that looks like a final kaf; text corrected | 2026-11-28 |
+| `he-02` | colon after the heading | no colon | confirmed | 2026-11-28 |
+| `he-03` | no full stop after the three rules | full stops | confirmed | 2026-11-28 |
+| `he-05` | חבילות (havilot) | חביות (haviot) | confirmed: the writer's mistake | 2026-11-28 |
+
+The owner also decided (2026-11-28) that either letter case is right on `ru-02`, as on `ru-01`: both are in block capitals.
 
 ## AI-drawn pages
 

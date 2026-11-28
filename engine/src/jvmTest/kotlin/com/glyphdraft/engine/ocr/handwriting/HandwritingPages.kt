@@ -13,6 +13,9 @@ internal enum class Writing { PRINT, CURSIVE }
 
 internal enum class Paper { LINED, PLAIN }
 
+/** Whether a reading must keep the letter case of the expected text, or either case is right (a page in capitals). */
+internal enum class LetterCase { EXACT, EITHER }
+
 /** One row of the handwriting manifest: the page `<name>.jpg` and the text written on it, `<name>.txt`. */
 internal data class HandwritingPage(
     val name: String,
@@ -20,6 +23,7 @@ internal data class HandwritingPage(
     val source: Source,
     val writing: Writing,
     val paper: Paper,
+    val letterCase: LetterCase,
 ) {
     val image: File get() = File(HandwritingPages.folder, "$name.jpg")
     val expected: File get() = File(HandwritingPages.folder, "$name.txt")
@@ -28,7 +32,7 @@ internal data class HandwritingPage(
 /** The handwriting fixtures (`src/test/resources/fixtures/handwriting`, see the README there). */
 internal object HandwritingPages {
     const val MANIFEST = "manifest.tsv"
-    private const val COLUMNS = 5
+    private const val COLUMNS = 6
 
     val folder = File(TestModels.fixtures, "handwriting")
 
@@ -45,7 +49,14 @@ internal object HandwritingPages {
         val (name, code, source, writing, paper) = cells
         val language = assertNotNull(Language.Supported.firstOrNull { it.code == code }, "$MANIFEST, $name: unknown language $code")
 
-        return HandwritingPage(name, language, valueOf<Source>(source, name), valueOf<Writing>(writing, name), valueOf<Paper>(paper, name))
+        return HandwritingPage(
+            name = name,
+            language = language,
+            source = valueOf<Source>(source, name),
+            writing = valueOf<Writing>(writing, name),
+            paper = valueOf<Paper>(paper, name),
+            letterCase = valueOf<LetterCase>(cells.last(), name),
+        )
     }
 
     private inline fun <reified T : Enum<T>> valueOf(cell: String, name: String): T =
