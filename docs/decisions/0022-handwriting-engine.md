@@ -129,6 +129,26 @@ One photographed page of Hebrew cursive (fixture `he-school`, a school assignmen
 - The Claude transcript fixed real mistakes but also dropped part of a sentence, reordered sentences and replaced words with ones of another meaning.
 - Availability: `gemini-3.8-flash` never answered (HTTP 503 or time-out); Hydrogen needed a second run once and a retry twice.
 - The shipped Hebrew model (Tesseract `heb`, a printed-text model) on the same page: CER 83.0 % on the 3072 x 4080 original, 75.9 % on the 2048-pixel fixture made from it (`HandwritingBaselineTest`, which also folds full-width forms and more quote shapes). The rows above were read from the original, so later runs on fixtures are not directly comparable with them.
+## Baseline of the shipped models (2026-11-28)
+
+`HandwritingBaselineTest` over the 41 fixtures, each page read in its own language, on Windows. The owner verified the handwritten texts (2026-11-28); the AI-drawn ones were proofread by an AI agent. Page figures are in the report that `scripts/build.ps1` prints.
+
+| Language | Samples | Pages | Mean CER % | Worst page CER % | Against the bar (answer 3) |
+|---|---|---|---|---|---|
+| English | real | 5 | 3.1 | 9.5 | good |
+| Russian | real | 5 | 20.9 | 33.9 (`ru-05`) | experimental |
+| Hebrew | real | 6 | 64.1 | 84.3 | poor |
+| German | AI-drawn | 5 | 0.4 | 1.0 | experimental at best (answer 6) |
+| French | AI-drawn | 5 | 9.7 | 32.5 (`fr-04`) | experimental at best |
+| Spanish | AI-drawn | 5 | 0.6 | 1.3 | experimental at best |
+| Chinese | AI-drawn | 5 | 0.0 | 0.0 | experimental at best |
+| Japanese | AI-drawn | 5 | 0.8 | 3.9 | experimental at best |
+
+- Letter case is not counted on `ru-01` and `ru-02`, which are in block capitals (owner, 2026-11-28). With case counted, `ru-02` scores 71.1 and Russian 29.4.
+- Russian block capitals and cursive differ: `ru-01` 1.6, the other four pages 17.4 to 33.9.
+- The low figures on AI-drawn pages do not show that the models read real handwriting in those languages: several drawings look like fonts.
+- A page has few characters and five pages are a small sample, so one page can move a language across a threshold.
+
 ## Proposal
 
 1. Measure the shipped models first on the fixtures (task 1).
