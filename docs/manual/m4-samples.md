@@ -1,14 +1,13 @@
-# M4: handwriting samples still needed
+# M4: handwriting samples
 
-At least 5 pages per language (`docs/plan.md`, task 1). Only `he-01` is in the fixtures so far. How a page gets in, and its rules: `engine/src/test/resources/fixtures/handwriting/README.md`.
+All 40 numbered pages (5 per language, `docs/plan.md`, task 1) were delivered on 2026-11-28 and checked: each has its full text, on the requested paper. The photo tool has prepared them; they wait in `engine/src/test/resources/fixtures/handwriting-pending/` until their expected texts are written. `he-school`, an extra page beside the numbered set, is already a fixture. How a page gets in, and its rules: `engine/src/test/resources/fixtures/handwriting/README.md`.
 
-| Languages | Who | Pages still needed |
+| Languages | Made by | Still open |
 |---|---|---|
-| Hebrew | owner | 4 |
-| English, Russian | owner | 5 each |
-| German, French, Spanish, Chinese, Japanese | free AI image model, then proofread by an AI agent | 5 each |
+| English, Russian, Hebrew | owner, handwritten; the owner consents to publishing them as test fixtures (2026-11-28) | text verified by the writer or another reader of the language |
+| German, French, Spanish, Chinese, Japanese | Gemini in "Auto" mode, exact submodel unknown (owner, 2026-11-28) | proofreading by an AI agent |
 
-## Owner's pages (English, Hebrew, Russian)
+## Pages as requested
 
 | Page | Writing | Paper |
 |---|---|---|
@@ -18,16 +17,24 @@ At least 5 pages per language (`docs/plan.md`, task 1). Only `he-01` is in the f
 | 04 | cursive | plain |
 | 05 | cursive, quick and untidy | lined |
 
-Hebrew needs pages 02 to 05 only: `he-01` already is the cursive page on plain paper, so `he-04` is print-like on lined paper instead.
+The handwritten images are crops around the text, not whole pages; the owner accepts them as they are (2026-11-28). The texts they were copied from are outside the repository. An AI agent can draft their expected text (an AI draft of `he-school` had five differences).
 
-- Any text of about 4 to 10 lines, without names, addresses or other personal data. Spelling mistakes are welcome: they stay in the expected text.
-- Photograph the whole page with the phone, roughly straight from above, in ordinary light. Keep the original files; do not edit them.
-- Put them in a folder outside the repository, named like `en-01.jpg`, and say that they may be published as test fixtures.
-- The expected text can be drafted by an AI agent; the writer or another reader of the language then verifies it against the page (an AI draft of `he-01` had five differences).
+## To check when writing the expected texts
+
+The expected text and the manifest's `writing` column follow the page, not the request. The differences below were seen by an AI; for the handwritten pages a reader of the language confirms them.
+
+- `en-01`: "seeds of young plants" (asked: "or").
+- `ru-02`, `he-02`: a colon after the heading.
+- `ru-05`: looks like "две больших бочки" (asked: "большие").
+- `he-05`: looks like "חבילות" (asked: "חביות").
+- `he-01`: the last letter of the second word looks like a final kaf.
+- `ru-01` is written in capitals. A reading in capitals and one in regular case are both acceptable (owner, 2026-11-28), so the score must ignore letter case on this page; today it does not.
+- `fr-01` is cursive (asked: print-like); `zh-03`, `zh-05`, `ja-03` and `ja-04` look print-like (asked: cursive); no AI-drawn page 05 is really untidy.
+- `fr-05` has stray accent-like strokes.
 
 ## AI-drawn pages
 
-Prompt, with the language, paper and writing of the page filled in:
+Drawn with Gemini in "Auto" mode; the originals are outside the repository, and their metadata says "Created by Google Generative AI". The prompt, with the language, paper and writing of the page filled in:
 
 > A photograph, taken straight from above, of one sheet of [lined notebook paper | plain white paper] with [neat print-like handwriting | cursive handwriting | quick, untidy handwriting] in [blue ballpoint pen | black pen | pencil], in [language]. The sheet shows exactly the following text, line by line, and nothing else:
 
