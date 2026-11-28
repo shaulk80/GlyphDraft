@@ -24,7 +24,24 @@ class HandwritingScoringTest {
             )
 
         for ((expected, read, rate) in cases) {
-            assertEquals(rate, HandwritingScore.errorRate(expected, read), 1e-9, "expected '$expected', read '$read'")
+            assertEquals(rate, HandwritingScore.errorRate(expected, read, LetterCase.EXACT), 1e-9, "expected '$expected', read '$read'")
+        }
+    }
+
+    @Test
+    fun letterCaseCountsOnlyOnAPageThatMustKeepIt() {
+        // case rule, expected, read, error rate
+        val cases =
+            listOf(
+                CaseExample(LetterCase.EXACT, "ВОДЫ", "воды", 1.0),
+                CaseExample(LetterCase.EITHER, "ВОДЫ", "воды", 0.0),
+                CaseExample(LetterCase.EITHER, "ВОДЫ", "Воды", 0.0),
+                CaseExample(LetterCase.EITHER, "ВОДЫ", "ВОДЫ", 0.0),
+                CaseExample(LetterCase.EITHER, "ВОДЫ", "вода", 0.25),
+            )
+
+        for ((letterCase, expected, read, rate) in cases) {
+            assertEquals(rate, HandwritingScore.errorRate(expected, read, letterCase), 1e-9, "$letterCase: '$expected', read '$read'")
         }
     }
 
@@ -57,5 +74,7 @@ class HandwritingScoringTest {
     }
 
     private fun score(name: String, language: Language, source: Source, rate: Double, note: String = ""): PageScore =
-        PageScore(HandwritingPage(name, language, source, Writing.PRINT, Paper.LINED), rate, note)
+        PageScore(HandwritingPage(name, language, source, Writing.PRINT, Paper.LINED, LetterCase.EXACT), rate, note)
+
+    private data class CaseExample(val letterCase: LetterCase, val expected: String, val read: String, val rate: Double)
 }

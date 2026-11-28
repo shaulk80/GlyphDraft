@@ -47,15 +47,18 @@ class HandwritingBaselineTest {
         val image = ImageInput(page.image.name, page.image.readBytes())
         val expected = page.expected.readText(Charsets.UTF_8)
 
+        fun scored(read: String, note: String): PageScore =
+            PageScore(page, HandwritingScore.errorRate(expected, read, page.letterCase), note)
+
         return when (val outcome = runBlocking { engine.recognize(image, page.language) }) {
             is Outcome.Success -> {
                 val note = if (outcome.value.lowQuality) "marked low quality" else ""
-                PageScore(page, HandwritingScore.errorRate(expected, outcome.value.text), note)
+                scored(outcome.value.text, note)
             }
             is Outcome.Failure -> {
                 // Finding no text is a reading result (everything is missed); any other failure is a broken run.
                 assertEquals(OnDeviceOcrEngine.NO_TEXT, outcome.message, "${page.name} could not be read")
-                PageScore(page, HandwritingScore.errorRate(expected, ""), outcome.message)
+                scored("", outcome.message)
             }
         }
     }

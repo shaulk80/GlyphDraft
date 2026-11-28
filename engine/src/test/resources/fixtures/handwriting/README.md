@@ -11,6 +11,7 @@ Photographed or drawn pages of handwriting (`<name>.jpg`), the text written on e
 | `source` | `real` (written by a person) or `ai` (drawn by an image model: synthetic, reported separately) |
 | `writing` | `print` (print-like letters) or `cursive` (joined or running hand) |
 | `paper` | `lined` or `plain` |
+| `case` | `exact` (a reading must keep the letter case of the text) or `either` (capitals and regular case are both right, for a page written in capitals) |
 
 The goal is at least 5 pages per language, with print-like and cursive writing on lined and plain paper.
 
