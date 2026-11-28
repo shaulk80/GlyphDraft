@@ -6,7 +6,7 @@ Photographed or drawn pages of handwriting (`<name>.jpg`), the text written on e
 
 | Column | Values |
 |---|---|
-| `name` | `<language>-<number>`, for example `he-01` |
+| `name` | `<language>-<number>`, for example `he-01`; a page beside the numbered set has a word instead, like `he-school` |
 | `language` | `en`, `ru`, `he`, `de`, `fr`, `es`, `zh`, `ja` |
 | `source` | `real` (written by a person) or `ai` (drawn by an image model: synthetic, reported separately) |
 | `writing` | `print` (print-like letters) or `cursive` (joined or running hand) |
@@ -25,4 +25,4 @@ The goal is at least 5 pages per language, with print-like and cursive writing o
 
 | Page | Origin and consent | Proofread |
 |---|---|---|
-| `he-01` | A school assignment, photographed; the owner consents to publishing it as a test fixture (2026-11-27). | By the owner, 2026-11-27 |
+| `he-school` | A school assignment, photographed; the owner consents to publishing it as a test fixture (2026-11-27). | By the owner, 2026-11-27 |

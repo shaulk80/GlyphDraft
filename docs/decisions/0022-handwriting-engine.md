@@ -107,7 +107,7 @@ The spike starts with Claude because the owner can test it without a new key; th
 
 ## First measurements (2026-11-27)
 
-One photographed page of Hebrew cursive (a school assignment; the owner consents to it as a public fixture), one run per row, free tier, photo sent without metadata. CER against the page's text as written, **verified by the owner** on 2026-11-27. Blank length and quote and dash shapes were not counted. The scripts are not in the repository.
+One photographed page of Hebrew cursive (fixture `he-school`, a school assignment; the owner consents to it as a public fixture), one run per row, free tier, photo sent without metadata. CER against the page's text as written, **verified by the owner** on 2026-11-27. Blank length and quote and dash shapes were not counted. The scripts are not in the repository.
 
 | Model, thinking level | Asked for | CER % | Words found % | Seconds | Paid-tier USD |
 |---|---|---|---|---|---|

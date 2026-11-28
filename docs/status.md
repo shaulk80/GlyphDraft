@@ -1,6 +1,6 @@
 # GlyphDraft: status
 
-Updated: 2026-11-27. Keep this file under 3 KB. History belongs in git, pull requests and the Releases page, not here.
+Updated: 2026-11-28. Keep this file under 3 KB. History belongs in git, pull requests and the Releases page, not here.
 
 ## Now
 
@@ -8,22 +8,16 @@ M0 to M3 are done. `v0.2.0` adds on-device translation (OPUS-MT int8 on ONNX Run
 
 ## Next
 
-**Next step: the owner provides 39 pages for M4 task 1** (5 per language; only `he-01` is in). Page numbers to deliver:
+**Next step: finish M4 task 1 with the 40 delivered pages** (not started). All are there with their text (checked 2026-11-28), prepared by the photo tool into `engine/src/test/resources/fixtures/handwriting-pending/`. A page moves into `handwriting/` together with its `.txt`, manifest row and README entry; then the baseline is recorded.
 
-| Pages | Print-like, lined | Print-like, plain | Cursive, lined | Cursive, plain | Quick cursive, lined |
-|---|---|---|---|---|---|
-| Handwritten: English `en` | 01 | 02 | 03 | 04 | 05 |
-| Handwritten: Russian `ru` | 01 | 02 | 03 | 04 | 05 |
-| Handwritten: Hebrew `he` | 04 | 02 | 03 | in (`he-01`) | 05 |
-| AI-drawn: `de`, `fr`, `es`, `zh`, `ja`, each | 01 | 02 | 03 | 04 | 05 |
-
-- Handwritten (14): 4 to 10 lines, no personal data, whole page photographed, unedited, kept outside the repository, with permission to publish. The writer or another reader of the language verifies the expected text.
-- AI-drawn (25): drawn by a free image model from the texts and prompt in `docs/manual/m4-samples.md`; saved outside the repository, model noted. An AI agent proofreads them.
+- The owner consents to publishing the 15 handwritten pages (2026-11-28); the 25 AI ones were drawn with Gemini ("Auto" mode, submodel unknown). Both go into the fixtures README with the pages.
+- The expected text follows the page, not the request; what to check page by page, and the AI-drawn texts: `docs/manual/m4-samples.md`.
+- The score must ignore letter case on `ru-01` (written in capitals; either case is acceptable).
 
 ## M4 and issues
 
 - M4, handwriting: twelve tasks (`docs/plan.md`, decision 0022: reader per language and cloud provider open until the spikes).
-- Task 1 (fixtures and baseline): photo tool, fixture rules and baseline report (printed by `build.ps1`, on the CI summary page) are in; `he-01` reads at CER 75.9 %. Done when the baseline over all pages is recorded.
+- Task 1 (fixtures and baseline): photo tool, fixture rules and baseline report (printed by `build.ps1`, on the CI summary page) are in; `he-school` reads at CER 75.9 %. Done when the baseline over all pages is recorded.
 - CI flakes fixed (#8, #12, #15), clean on CI in PR #58; reopen #12 if `Attempt 1 of 3 failed` returns to the `build-windows` log.
 - Issues from the hand tests: #54 (list dashes are not read) and #51 (auto-detect offers no missing reading model) are open; #30 (Linux window icon) is parked until seen on a native Linux desktop.
 
